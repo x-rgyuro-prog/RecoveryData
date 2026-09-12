@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RecoveryData — Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">RD</div>
+          <div>
+            <div class="brand-name">RecoveryData</div>
+            <div class="brand-sub">Fleet recovery analytics</div>
+          </div>
+        </div>
+        <nav id="nav"></nav>
+        <div class="sidebar-footer">
+          <span class="badge-live"><span class="dot"></span> Static preview</span>
+          <div style="margin-top: 10px">
+            In production this data is pulled live from Google Sheets on every load.
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <h1 class="page-title">Vehicle Recovery Dashboard</h1>
+            <div class="page-subtitle" id="subtitle">Loading…</div>
+          </div>
+        </div>
+        <div id="content"></div>
+      </main>
+    </div>
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

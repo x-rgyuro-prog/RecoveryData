@@ -1,0 +1,321 @@
+Case ID,Date Assigned,Date Recovered,Status,Make,Model,Year,VIN,State,Recovery Agent,Days to Recover,Recovery Fee,Mileage,Condition,Lienholder
+RC-10000,01/26/2024,,In Progress,Dodge,Charger,2016,ECB512ABE2244H0F7,FL,D. Garcia,,,104194,,Westlake Financial
+RC-10001,12/10/2024,12/22/2024,Recovered,Chevrolet,Malibu,2011,GGEA0C8BF37GDB359,GA,J. Chen,12,$639,114647,Poor,Santander
+RC-10002,06/15/2024,07/31/2024,Recovered,Dodge,Ram 1500,2016,44B31E0E84DF5B66H,CA,M. Johnson,46,$464,163682,Poor,Auto Credit Corp
+RC-10003,02/09/2025,,In Progress,Dodge,Ram 1500,2022,CC515H2G9C057CC42,AZ,D. Garcia,,,171208,,Santander
+RC-10004,07/20/2025,,Closed - Unrecovered,Nissan,Rogue,2008,4C755GFCA44951B37,IL,M. Johnson,,,55065,,Westlake Financial
+RC-10005,07/06/2025,,Closed - Unrecovered,BMW,3 Series,2008,20CG96EE2B5691C39,FL,T. Nguyen,,,153326,,Credit Union One
+RC-10006,07/06/2025,,Closed - Unrecovered,Honda,Accord,2014,4H4G80EBA12A4BBAF,IL,M. Johnson,,,88001,,Ally
+RC-10007,07/06/2025,10/07/2025,Recovered,Honda,Accord,2023,E0HB3GH7A33B56BD1,FL,D. Garcia,93,$1153,63100,Poor,Santander
+RC-10008,03/29/2025,,Closed - Unrecovered,Chevrolet,Silverado,2011,A97987C0DHBG9E60H,WA,K. Brown,,,55579,,Auto Credit Corp
+RC-10009,02/29/2024,,Pending,Toyota,Corolla,2009,5B217C9BD24EC8E23,AZ,S. Williams,,,83358,,Auto Credit Corp
+RC-10010,11/17/2024,12/21/2024,Recovered,Dodge,Durango,2012,4FF5B099BDE877GC7,WA,T. Nguyen,34,$655,175347,Damaged,First National Bank
+RC-10011,11/02/2024,,In Progress,Dodge,Durango,2011,8CCB1E24D3E087BHE,TX,S. Williams,,,49293,,Ally
+RC-10012,03/28/2025,,Pending,Toyota,Corolla,2021,2C94CAG1HAG89AG44,OH,D. Garcia,,,177702,,Ally
+RC-10013,06/15/2024,,Closed - Unrecovered,Chevrolet,Malibu,2013,7A5F8676E6B77E60F,GA,M. Johnson,,,21203,,Ally
+RC-10014,12/02/2024,12/11/2024,Recovered,Chevrolet,Cruze,2016,G147FA7E29A2G6H9C,PA,M. Johnson,9,$1041,81773,Good,Ally
+RC-10015,06/16/2025,,Closed - Unrecovered,Honda,Civic,2014,GB3FF74FFHHFCH848,PA,T. Nguyen,,,121450,,Credit Union One
+RC-10016,11/07/2024,12/04/2024,Recovered,BMW,3 Series,2018,0HD086DB13G654EDA,GA,K. Brown,27,$690,175241,Good,Santander
+RC-10017,01/28/2025,03/21/2025,Recovered,Honda,Accord,2012,3A55BHD91AE706492,NC,D. Garcia,52,$499,158621,Excellent,Auto Credit Corp
+RC-10018,04/05/2025,05/07/2025,Recovered,Dodge,Ram 1500,2016,513EBFEF1CE44BH1H,GA,D. Garcia,32,$1110,117099,Damaged,Ally
+RC-10019,05/03/2025,06/18/2025,Recovered,Ford,Fusion,2020,79H512DDHAG4HC0C3,TX,D. Garcia,46,$555,170161,Damaged,Ally
+RC-10020,03/14/2025,05/13/2025,Recovered,Ford,F-150,2009,EF0G7F9H705A9EB9A,TX,M. Johnson,60,$436,67261,Good,Credit Union One
+RC-10021,05/09/2024,08/03/2024,Recovered,Chevrolet,Malibu,2014,0EG2946CF2828G8D2,TN,M. Johnson,86,$367,41712,Poor,Ally
+RC-10022,08/02/2025,,Closed - Unrecovered,Nissan,Altima,2009,GHG1G76B9364H59E6,IL,K. Brown,,,136863,,Santander
+RC-10023,10/01/2024,11/02/2024,Recovered,BMW,5 Series,2010,F0524G0F0GEF2721D,GA,D. Garcia,32,$1100,143077,Damaged,Auto Credit Corp
+RC-10024,05/17/2025,05/20/2025,Recovered,Dodge,Ram 1500,2017,D4F201H5F4EECDC15,FL,M. Johnson,3,$345,71723,Excellent,Westlake Financial
+RC-10025,06/21/2025,,Pending,Dodge,Durango,2017,96FGF4CAAF835BAF0,OH,R. Patel,,,28468,,Westlake Financial
+RC-10026,04/26/2024,,Closed - Unrecovered,BMW,X5,2010,HB3AC2F9C526E10H7,AZ,T. Nguyen,,,164062,,Credit Union One
+RC-10027,07/31/2024,,In Progress,Ford,F-150,2014,EBE1CH40AFF7BEE62,GA,D. Garcia,,,45087,,Credit Union One
+RC-10028,09/29/2024,,Closed - Unrecovered,Chevrolet,Malibu,2012,BCF52FC44810BAHFE,CA,M. Johnson,,,191763,,Credit Union One
+RC-10029,10/02/2024,,Pending,Nissan,Altima,2009,5D1HF9H690HFBCH03,AZ,A. Morales,,,134229,,First National Bank
+RC-10030,11/27/2024,01/18/2025,Recovered,Toyota,RAV4,2008,31HDG535D18H4C92E,FL,T. Nguyen,52,$1135,159399,Good,Credit Union One
+RC-10031,08/18/2024,,Closed - Unrecovered,Honda,Civic,2011,0C6041E79E1G8177E,AZ,S. Williams,,,148100,,Westlake Financial
+RC-10032,10/16/2024,,In Progress,BMW,3 Series,2017,723700F5G879EG7HF,NC,D. Garcia,,,116208,,Ally
+RC-10033,06/04/2024,06/09/2024,Recovered,BMW,5 Series,2018,77H105H3C09G43777,AZ,S. Williams,5,$379,179311,Excellent,Credit Union One
+RC-10034,08/28/2024,,In Progress,Ford,F-150,2017,95HB37H48A6FGC126,FL,R. Patel,,,35701,,Credit Union One
+RC-10035,09/03/2024,11/17/2024,Recovered,BMW,X5,2015,0EEA684CHG23HE7DG,NC,J. Chen,75,$396,77182,Excellent,Credit Union One
+RC-10036,10/29/2024,01/22/2025,Recovered,Toyota,RAV4,2016,A76985685E6DDE554,FL,J. Chen,85,$655,179484,Good,Westlake Financial
+RC-10037,02/04/2024,,Pending,BMW,X5,2019,5BF5DC19186E6065G,CA,K. Brown,,,34739,,Auto Credit Corp
+RC-10038,02/10/2025,,Closed - Unrecovered,BMW,3 Series,2019,BHECG5EG3G4038F23,TN,K. Brown,,,198783,,Westlake Financial
+RC-10039,04/29/2024,05/05/2024,Recovered,Dodge,Ram 1500,2017,9CE1GG9412573738F,WA,S. Williams,6,$288,71955,Excellent,Santander
+RC-10040,04/11/2024,,In Progress,Chevrolet,Equinox,2019,19GHDC70332A6EC2B,IL,M. Johnson,,,168716,,Auto Credit Corp
+RC-10041,12/02/2024,,Closed - Unrecovered,BMW,3 Series,2012,62E9916B7CG62AECH,CA,J. Chen,,,139845,,Santander
+RC-10042,06/09/2025,,Pending,BMW,X5,2011,0D3583F3A97HB4H8F,FL,J. Chen,,,48080,,Westlake Financial
+RC-10043,01/25/2025,,Pending,Nissan,Rogue,2017,02B47354D0EG0HBH3,OH,R. Patel,,,195046,,Santander
+RC-10044,03/28/2024,05/23/2024,Recovered,Ford,F-150,2019,6222FCG357492G2D3,GA,J. Chen,56,$348,106780,Damaged,Westlake Financial
+RC-10045,08/10/2025,10/04/2025,Recovered,Ford,Explorer,2008,234AE58GDC3B59B1G,NC,S. Williams,55,$1115,56263,Poor,Westlake Financial
+RC-10046,08/04/2025,,Pending,Dodge,Ram 1500,2010,7C5ABHH2HD1GB421F,GA,D. Garcia,,,172109,,First National Bank
+RC-10047,11/04/2024,11/22/2024,Recovered,Ford,Escape,2016,FC0HC1E24GH5H0BFH,AZ,D. Garcia,18,$1032,90894,Good,Santander
+RC-10048,06/24/2024,,Closed - Unrecovered,Ford,Explorer,2022,68B7E21HFGFD1C18G,WA,R. Patel,,,76936,,First National Bank
+RC-10049,07/21/2024,10/07/2024,Recovered,Chevrolet,Equinox,2010,D50550823373CBHFE,TX,S. Williams,78,$406,147995,Good,Westlake Financial
+RC-10050,02/08/2024,03/27/2024,Recovered,Honda,Pilot,2017,B77310168063F0CBB,OH,J. Chen,48,$1101,147264,Fair,First National Bank
+RC-10051,03/25/2025,,Pending,Chevrolet,Cruze,2013,G8G54A3GF2GE792CB,TN,R. Patel,,,106703,,Westlake Financial
+RC-10052,02/05/2025,04/23/2025,Recovered,Dodge,Durango,2010,FG66465413HGGDD90,GA,R. Patel,77,$975,55617,Good,Westlake Financial
+RC-10053,06/03/2025,,Closed - Unrecovered,BMW,3 Series,2009,3732CD4384AG49256,GA,M. Johnson,,,96125,,Santander
+RC-10054,01/11/2025,,In Progress,BMW,3 Series,2022,0FG1966CE371B77F5,NY,K. Brown,,,149572,,Auto Credit Corp
+RC-10055,04/03/2024,05/31/2024,Recovered,BMW,X5,2019,8HHGGBEFB4GCA8065,NC,K. Brown,58,$1155,176309,Good,First National Bank
+RC-10056,08/08/2024,,Closed - Unrecovered,Ford,Explorer,2012,151CFFAH60B82A1EC,AZ,A. Morales,,,176168,,Westlake Financial
+RC-10057,07/10/2024,,In Progress,Chevrolet,Cruze,2010,1G9161A7AGG5GBE3B,PA,S. Williams,,,49972,,First National Bank
+RC-10058,06/28/2024,,Closed - Unrecovered,Toyota,RAV4,2022,90DC48AD67FFH60A3,NY,S. Williams,,,27531,,Ally
+RC-10059,05/07/2024,,Closed - Unrecovered,Toyota,RAV4,2019,HHH9GD4G6EBHH9DFB,OH,T. Nguyen,,,95346,,Santander
+RC-10060,06/19/2024,,In Progress,Nissan,Titan,2022,GA7G9E99B3G649C26,TX,R. Patel,,,32624,,Auto Credit Corp
+RC-10061,01/10/2025,03/01/2025,Recovered,BMW,5 Series,2009,249G521H3EC50G2EE,NC,M. Johnson,50,$830,175399,Poor,Ally
+RC-10062,05/05/2024,05/15/2024,Recovered,Honda,Accord,2013,80B47FGB18748361C,GA,R. Patel,10,$712,77058,Excellent,First National Bank
+RC-10063,04/23/2025,,Closed - Unrecovered,Toyota,RAV4,2012,3BF94156B9304G763,FL,R. Patel,,,128408,,Credit Union One
+RC-10064,05/07/2024,,Pending,BMW,3 Series,2012,FC8E91FBD9E33B322,FL,S. Williams,,,162749,,First National Bank
+RC-10065,03/24/2024,06/15/2024,Recovered,BMW,3 Series,2016,35H303F9064FBBH0D,PA,R. Patel,83,$1039,96941,Poor,Ally
+RC-10066,02/12/2025,04/01/2025,Recovered,BMW,X5,2011,F0EEBFG3E7CF2F501,NC,T. Nguyen,48,$777,145382,Good,First National Bank
+RC-10067,09/03/2024,11/17/2024,Recovered,Honda,Pilot,2009,A073017H755GH2D1B,IL,K. Brown,75,$611,159141,Poor,Credit Union One
+RC-10068,05/01/2024,05/14/2024,Recovered,Dodge,Durango,2019,6G85D11ACF0021F3C,PA,T. Nguyen,13,$653,170641,Poor,Credit Union One
+RC-10069,06/29/2025,09/28/2025,Recovered,BMW,5 Series,2017,0AFBHF8732E392EA0,IL,D. Garcia,91,$826,53738,Fair,First National Bank
+RC-10070,07/14/2024,09/09/2024,Recovered,Nissan,Altima,2021,C4H5875BCDF31FD8G,OH,T. Nguyen,57,$571,174927,Excellent,Auto Credit Corp
+RC-10071,07/25/2025,08/23/2025,Recovered,Chevrolet,Equinox,2017,4400284F218HG5CA9,CA,S. Williams,29,$554,130966,Poor,Ally
+RC-10072,07/25/2024,,Closed - Unrecovered,Honda,Accord,2016,84C32E413AH4B5A18,AZ,K. Brown,,,140160,,Ally
+RC-10073,11/24/2024,02/15/2025,Recovered,Chevrolet,Equinox,2010,3E57A8H78A76D57FA,NY,J. Chen,83,$310,102829,Poor,Santander
+RC-10074,06/20/2025,07/08/2025,Recovered,Dodge,Durango,2022,E6F534AGF4D23HHFH,CA,R. Patel,18,$1121,51860,Excellent,Westlake Financial
+RC-10075,09/24/2024,10/25/2024,Recovered,Chevrolet,Silverado,2016,9F5A34BCFH184FC8F,PA,M. Johnson,31,$707,72443,Fair,Santander
+RC-10076,01/17/2025,04/17/2025,Recovered,Chevrolet,Cruze,2023,566542611G8C68D1C,IL,K. Brown,90,$812,45471,Fair,Ally
+RC-10077,04/03/2024,,Pending,Nissan,Titan,2022,6010B065H652AGB98,CA,K. Brown,,,23319,,Westlake Financial
+RC-10078,05/18/2024,,Closed - Unrecovered,Honda,Accord,2021,G808GB97C7C9HC975,NY,K. Brown,,,191553,,Ally
+RC-10079,06/28/2025,07/28/2025,Recovered,Nissan,Titan,2022,GE85C6H57ADBA24A5,AZ,K. Brown,30,$503,76430,Damaged,Auto Credit Corp
+RC-10080,05/23/2024,,Pending,BMW,3 Series,2017,E82256E791HE225D4,IL,K. Brown,,,27290,,Westlake Financial
+RC-10081,01/25/2025,,Closed - Unrecovered,Dodge,Durango,2018,4HFD1EE7C0BHH1GEF,CA,K. Brown,,,112275,,First National Bank
+RC-10082,02/22/2024,04/11/2024,Recovered,Nissan,Sentra,2009,7D55207F9A89C90E2,GA,D. Garcia,49,$939,77739,Damaged,Westlake Financial
+RC-10083,01/24/2025,04/03/2025,Recovered,BMW,X5,2019,FG70655FDFA75A124,NY,R. Patel,69,$914,66430,Poor,Auto Credit Corp
+RC-10084,05/26/2025,,Pending,Honda,Accord,2018,E6930D6D40813BA79,TN,A. Morales,,,16673,,Santander
+RC-10085,03/10/2024,,In Progress,Chevrolet,Malibu,2012,A1G34300A1A1E9A64,FL,J. Chen,,,40248,,Credit Union One
+RC-10086,07/15/2024,,Pending,Chevrolet,Malibu,2016,6EHGH29E47375BG1B,TX,R. Patel,,,36675,,Santander
+RC-10087,12/05/2024,,Pending,BMW,X5,2011,88E842E84F13D7ADC,WA,D. Garcia,,,35168,,Westlake Financial
+RC-10088,08/03/2025,,Closed - Unrecovered,Chevrolet,Malibu,2020,41G564B5GBEB2329F,TN,T. Nguyen,,,133109,,Santander
+RC-10089,07/20/2025,09/14/2025,Recovered,Chevrolet,Equinox,2020,B364BC435FBAFGECD,NC,D. Garcia,56,$440,42077,Good,First National Bank
+RC-10090,11/28/2024,,Closed - Unrecovered,Toyota,Camry,2020,AH6529E14DEECDEF6,OH,T. Nguyen,,,79642,,Ally
+RC-10091,07/19/2024,08/02/2024,Recovered,Dodge,Ram 1500,2017,AH7G7HH632F240DHF,WA,K. Brown,14,$388,165963,Fair,Westlake Financial
+RC-10092,02/06/2025,02/21/2025,Recovered,Honda,CR-V,2014,2141904HF466H03E3,WA,D. Garcia,15,$827,113825,Good,Santander
+RC-10093,08/19/2025,10/27/2025,Recovered,Nissan,Titan,2021,16G813B53G3A94H59,AZ,J. Chen,69,$768,17765,Good,Westlake Financial
+RC-10094,04/01/2025,05/22/2025,Recovered,Chevrolet,Malibu,2012,GABH9C8CF0D00H4FF,WA,J. Chen,51,$724,20920,Poor,Ally
+RC-10095,09/06/2024,,Pending,Ford,Escape,2013,1FH063D3H570HADF4,CA,J. Chen,,,155742,,Auto Credit Corp
+RC-10096,07/20/2024,08/04/2024,Recovered,Toyota,RAV4,2023,13232G7364F3BCCFD,WA,R. Patel,15,$518,148909,Excellent,Santander
+RC-10097,08/11/2025,10/05/2025,Recovered,Nissan,Sentra,2023,343910CF0AGAC6910,TN,K. Brown,55,$440,123955,Excellent,Santander
+RC-10098,08/01/2025,08/30/2025,Recovered,Chevrolet,Silverado,2009,E1D0551CC56G6A419,CA,M. Johnson,29,$549,93042,Good,Santander
+RC-10099,03/30/2024,04/15/2024,Recovered,Toyota,RAV4,2015,D5472H3666212D9F2,IL,J. Chen,16,$1044,50543,Excellent,First National Bank
+RC-10100,05/15/2024,06/03/2024,Recovered,Toyota,Corolla,2018,65402EH037B1F8G9F,TX,J. Chen,19,$978,206609,Excellent,Ally
+RC-10101,01/01/2025,,Closed - Unrecovered,Dodge,Durango,2010,6H960FF1C7685A37A,FL,K. Brown,,,134673,,First National Bank
+RC-10102,05/15/2024,,In Progress,Honda,Accord,2017,C8E3EG8CHF4E34A0C,GA,K. Brown,,,17434,,First National Bank
+RC-10103,05/03/2024,,Closed - Unrecovered,Dodge,Ram 1500,2021,40EB6BGFG6734B22C,OH,M. Johnson,,,179647,,Ally
+RC-10104,03/29/2025,,Closed - Unrecovered,Chevrolet,Cruze,2014,BB52G9FCEB1226473,NY,M. Johnson,,,150724,,Credit Union One
+RC-10105,02/05/2025,04/29/2025,Recovered,Nissan,Sentra,2015,0C021998C72G4595A,CA,A. Morales,83,$305,83730,Fair,First National Bank
+RC-10106,06/02/2025,08/22/2025,Recovered,Ford,Fusion,2021,HH31CBB89CF2533FH,GA,A. Morales,81,$979,79088,Good,Santander
+RC-10107,02/26/2024,05/22/2024,Recovered,Ford,Fusion,2013,C44C9164DC6E75A6E,CA,T. Nguyen,86,$1009,201731,Damaged,Ally
+RC-10108,04/11/2025,,Pending,Ford,Fusion,2019,A7DC584C5A7AAG8D9,TX,D. Garcia,,,73855,,Westlake Financial
+RC-10109,11/23/2024,12/03/2024,Recovered,Chevrolet,Cruze,2019,C4AE1AH775FB0GF65,GA,K. Brown,10,$835,111540,Damaged,Santander
+RC-10110,07/13/2025,,Closed - Unrecovered,BMW,3 Series,2015,C8A134AG5G5FD9H99,FL,T. Nguyen,,,39386,,First National Bank
+RC-10111,01/16/2025,01/27/2025,Recovered,Chevrolet,Cruze,2011,13H2B3CF78H6F0E8C,PA,J. Chen,11,$844,55739,Good,Auto Credit Corp
+RC-10112,11/17/2024,12/03/2024,Recovered,Honda,Pilot,2019,9DFECC464A7FBEG14,NY,R. Patel,16,$798,23147,Excellent,Santander
+RC-10113,04/06/2024,04/20/2024,Recovered,Nissan,Sentra,2012,CB6EDH48B28B9D36B,OH,J. Chen,14,$1073,26192,Excellent,First National Bank
+RC-10114,02/08/2025,02/12/2025,Recovered,Chevrolet,Cruze,2021,DDDF7A3EFH1BFCD71,TN,A. Morales,4,$641,115269,Poor,Santander
+RC-10115,12/18/2024,,Pending,Nissan,Titan,2018,GDFD86B91599B3E68,TX,M. Johnson,,,165914,,Santander
+RC-10116,06/29/2024,09/13/2024,Recovered,Toyota,Corolla,2019,8A4922D970F0BED1A,PA,M. Johnson,76,$575,49207,Poor,Ally
+RC-10117,03/01/2024,03/20/2024,Recovered,Chevrolet,Equinox,2012,5779G8HBFCC9693D9,WA,S. Williams,19,$850,73520,Damaged,Auto Credit Corp
+RC-10118,10/28/2024,11/20/2024,Recovered,Honda,CR-V,2008,99H99A289D28C5E9D,CA,S. Williams,23,$996,132081,Good,Westlake Financial
+RC-10119,03/10/2024,04/12/2024,Recovered,Chevrolet,Malibu,2011,4AHHCH7GG6625E06A,TX,S. Williams,33,$1055,83453,Good,First National Bank
+RC-10120,01/19/2025,04/23/2025,Recovered,Toyota,Corolla,2010,G984H32HAF9H1813F,CA,A. Morales,94,$326,117996,Damaged,Credit Union One
+RC-10121,06/06/2024,07/23/2024,Recovered,BMW,X5,2021,B630BD390C608E3GG,AZ,S. Williams,47,$253,63911,Excellent,First National Bank
+RC-10122,04/21/2025,05/20/2025,Recovered,Toyota,Tacoma,2016,2C4B46H5EBG19482E,NY,J. Chen,29,$1107,118495,Good,Credit Union One
+RC-10123,05/03/2024,,Closed - Unrecovered,Nissan,Sentra,2022,D996CH9H937E88BGH,OH,T. Nguyen,,,151233,,Santander
+RC-10124,06/19/2025,,Closed - Unrecovered,BMW,3 Series,2021,CC229BB66777E320D,AZ,R. Patel,,,177069,,Credit Union One
+RC-10125,02/15/2025,04/07/2025,Recovered,Dodge,Durango,2018,4A0EGG6F7749EF55F,WA,D. Garcia,51,$1160,173591,Good,Auto Credit Corp
+RC-10126,02/20/2025,,In Progress,Honda,Accord,2023,5761CF1C77AD67E08,WA,M. Johnson,,,86821,,Westlake Financial
+RC-10127,06/01/2025,08/22/2025,Recovered,BMW,X5,2011,4E00901G7E6BAA76D,GA,M. Johnson,82,$1195,192653,Fair,Westlake Financial
+RC-10128,06/09/2025,09/05/2025,Recovered,Dodge,Ram 1500,2023,832AE6F93HGGE046H,CA,A. Morales,88,$259,149090,Poor,Credit Union One
+RC-10129,10/16/2024,01/12/2025,Recovered,Dodge,Durango,2023,B937E48FC58662344,TN,K. Brown,88,$360,92490,Poor,Santander
+RC-10130,02/06/2024,,Pending,Honda,Pilot,2014,G44308GFD32F05528,TN,S. Williams,,,186556,,First National Bank
+RC-10131,08/16/2024,,In Progress,Chevrolet,Equinox,2017,H7G20CA3230DC41H7,FL,R. Patel,,,67506,,Westlake Financial
+RC-10132,05/26/2024,08/26/2024,Recovered,Honda,Pilot,2010,03D3AE5D505B33H9G,TX,M. Johnson,92,$434,206537,Poor,First National Bank
+RC-10133,01/19/2024,,In Progress,Toyota,Corolla,2008,3E4GCG2D6FF52G79G,NC,S. Williams,,,64394,,Auto Credit Corp
+RC-10134,01/20/2024,02/18/2024,Recovered,BMW,X5,2012,DA1C46G3532AB7ACH,CA,T. Nguyen,29,$994,139360,Fair,Auto Credit Corp
+RC-10135,01/10/2024,03/04/2024,Recovered,Dodge,Durango,2011,3E2C6B4CCBDDE1D4F,TX,K. Brown,54,$927,69445,Excellent,Westlake Financial
+RC-10136,01/14/2024,,In Progress,Chevrolet,Silverado,2010,874CB15BEE9F0BDAF,TN,S. Williams,,,126672,,Ally
+RC-10137,02/16/2024,03/05/2024,Recovered,Ford,F-150,2013,F89E5GGCH0740H7DC,WA,A. Morales,18,$929,56784,Good,Santander
+RC-10138,08/05/2025,,In Progress,Nissan,Titan,2022,DGGA479C8CHAEF445,PA,M. Johnson,,,190595,,Westlake Financial
+RC-10139,03/19/2025,,In Progress,Nissan,Altima,2015,033C683A8100C5FFF,IL,M. Johnson,,,159309,,Ally
+RC-10140,08/28/2024,10/26/2024,Recovered,Honda,Pilot,2022,B0F95AHA166938230,OH,S. Williams,59,$704,29227,Fair,Santander
+RC-10141,01/07/2025,,In Progress,Toyota,Tacoma,2022,C5DG69F14ACC44B2D,AZ,M. Johnson,,,134811,,Auto Credit Corp
+RC-10142,04/20/2024,,Closed - Unrecovered,Dodge,Ram 1500,2021,A34C80219A51H2868,WA,R. Patel,,,206494,,Auto Credit Corp
+RC-10143,11/25/2024,,Pending,Ford,Fusion,2020,H24EHGF6C27171F51,GA,M. Johnson,,,69974,,Credit Union One
+RC-10144,12/19/2024,,In Progress,Dodge,Ram 1500,2012,93914FCG024H57F76,IL,J. Chen,,,21624,,Santander
+RC-10145,02/27/2024,04/02/2024,Recovered,Chevrolet,Silverado,2013,94CB6D1G0342E3G16,WA,T. Nguyen,35,$1018,196649,Good,Santander
+RC-10146,11/16/2024,,Pending,Honda,Pilot,2009,AE367684351259FD4,FL,R. Patel,,,207696,,Credit Union One
+RC-10147,02/11/2024,03/18/2024,Recovered,Ford,Fusion,2016,C2EF4CCFA83302G6F,GA,R. Patel,36,$819,151473,Good,Credit Union One
+RC-10148,07/10/2025,,Pending,Chevrolet,Cruze,2020,BDDFGD51969A40833,TX,S. Williams,,,114974,,First National Bank
+RC-10149,07/07/2025,,In Progress,Honda,CR-V,2017,A15110F3FBB9513D3,GA,D. Garcia,,,42243,,Auto Credit Corp
+RC-10150,03/14/2024,,In Progress,Nissan,Titan,2012,A4ABDEB68H0HFHCA4,CA,A. Morales,,,198732,,First National Bank
+RC-10151,10/23/2024,,Closed - Unrecovered,Toyota,Camry,2017,2F8G6ACD567F3F797,TN,S. Williams,,,17922,,Credit Union One
+RC-10152,05/24/2024,05/30/2024,Recovered,BMW,5 Series,2020,19F58GH31CD7DD677,IL,K. Brown,6,$255,183997,Damaged,First National Bank
+RC-10153,09/13/2024,10/09/2024,Recovered,Toyota,Camry,2023,9G4EFBD0F34C269DF,GA,D. Garcia,26,$993,87529,Poor,Auto Credit Corp
+RC-10154,12/05/2024,02/03/2025,Recovered,Dodge,Durango,2019,50B3BF68D53587362,PA,M. Johnson,60,$706,24609,Damaged,Westlake Financial
+RC-10155,06/01/2024,07/22/2024,Recovered,Nissan,Titan,2017,C1BGAE9945CC227C5,OH,A. Morales,51,$478,72362,Excellent,Auto Credit Corp
+RC-10156,01/13/2025,01/19/2025,Recovered,Ford,Explorer,2014,16G87A3B93E522GG2,CA,T. Nguyen,6,$934,113652,Fair,Credit Union One
+RC-10157,12/19/2024,02/19/2025,Recovered,Honda,CR-V,2008,1CCB3DDG4CE6400DC,AZ,A. Morales,62,$1158,78876,Good,Auto Credit Corp
+RC-10158,05/17/2024,,In Progress,Nissan,Sentra,2009,8CC81H937569D200D,AZ,R. Patel,,,167737,,Auto Credit Corp
+RC-10159,06/20/2024,,In Progress,Nissan,Rogue,2018,82BGCA18462D82715,CA,K. Brown,,,187855,,Auto Credit Corp
+RC-10160,03/17/2025,,Pending,Nissan,Altima,2021,GA1E66G2554BC0E7F,IL,D. Garcia,,,82582,,Auto Credit Corp
+RC-10161,08/14/2025,,Pending,Ford,F-150,2011,1GD6HBH2E1239HD12,FL,S. Williams,,,161563,,Credit Union One
+RC-10162,11/10/2024,,Pending,Honda,CR-V,2019,5HC7CE69B16634AH3,CA,R. Patel,,,138645,,Credit Union One
+RC-10163,03/06/2024,04/04/2024,Recovered,Honda,Civic,2010,258H3F9B5D0A781D6,IL,M. Johnson,29,$629,176268,Fair,Ally
+RC-10164,09/01/2024,,In Progress,Ford,Explorer,2008,9BEH4HDA481522G6E,GA,K. Brown,,,120894,,Credit Union One
+RC-10165,06/28/2024,09/01/2024,Recovered,Ford,Explorer,2010,1GC1E16EHG0EG5487,NC,J. Chen,65,$359,82585,Good,Santander
+RC-10166,08/23/2024,,Closed - Unrecovered,Dodge,Charger,2018,HG14EFH5G1DFD2D58,GA,K. Brown,,,208229,,Auto Credit Corp
+RC-10167,09/28/2024,10/28/2024,Recovered,Chevrolet,Malibu,2015,7G6CB90A797GF872E,FL,T. Nguyen,30,$457,119301,Fair,Credit Union One
+RC-10168,06/22/2025,,Closed - Unrecovered,Chevrolet,Silverado,2021,011H4D9404AD2F3E1,GA,T. Nguyen,,,138560,,Credit Union One
+RC-10169,07/07/2024,08/31/2024,Recovered,Toyota,RAV4,2021,4G7FDC2EBEEHGC9C6,FL,D. Garcia,55,$465,145966,Fair,Ally
+RC-10170,05/13/2025,06/15/2025,Recovered,Nissan,Rogue,2009,H4B6030GG28EAC79D,PA,R. Patel,33,$825,89608,Poor,Westlake Financial
+RC-10171,05/14/2025,,Closed - Unrecovered,Dodge,Durango,2022,8GF3CD6G327BCEFFE,TN,D. Garcia,,,86106,,Santander
+RC-10172,06/17/2025,08/09/2025,Recovered,BMW,X5,2013,7CEE55DHB80A519B3,CA,D. Garcia,53,$421,96099,Fair,Auto Credit Corp
+RC-10173,03/29/2025,,In Progress,Dodge,Ram 1500,2012,C7A37F091E094D233,PA,D. Garcia,,,152221,,Ally
+RC-10174,11/13/2024,01/14/2025,Recovered,Dodge,Durango,2015,6HGEFA67G0A890AHF,GA,A. Morales,62,$802,158710,Poor,Auto Credit Corp
+RC-10175,02/08/2025,03/01/2025,Recovered,Honda,Pilot,2020,6DB31634E31EDBCB0,NC,T. Nguyen,21,$982,198624,Damaged,Santander
+RC-10176,01/20/2024,01/27/2024,Recovered,Chevrolet,Equinox,2008,DBE45EC0GF6906F79,TX,T. Nguyen,7,$797,117871,Good,Credit Union One
+RC-10177,07/15/2024,,Closed - Unrecovered,Honda,Accord,2016,66C5E5H5A051904FF,TN,A. Morales,,,159069,,Credit Union One
+RC-10178,05/07/2025,,In Progress,Ford,Explorer,2017,D77DC3FDEC6AA602G,CA,M. Johnson,,,56339,,Santander
+RC-10179,03/02/2024,04/17/2024,Recovered,Ford,Explorer,2012,46CE9656HD4GC80HF,WA,K. Brown,46,$910,64748,Damaged,Auto Credit Corp
+RC-10180,11/27/2024,,In Progress,Nissan,Rogue,2022,E681BCFEGA3GDA75E,WA,J. Chen,,,187566,,Credit Union One
+RC-10181,07/13/2024,,Pending,BMW,X5,2023,5CFHFB3A8DABDA3G0,PA,T. Nguyen,,,27867,,Westlake Financial
+RC-10182,01/14/2024,04/07/2024,Recovered,Chevrolet,Silverado,2010,03G5866B3157BD1BE,AZ,M. Johnson,84,$753,65625,Damaged,Ally
+RC-10183,07/25/2025,,In Progress,Chevrolet,Malibu,2021,55244HB6113128819,OH,D. Garcia,,,181000,,Santander
+RC-10184,11/27/2024,,Pending,BMW,5 Series,2015,2D58E90H59219FFD7,TX,T. Nguyen,,,160139,,Credit Union One
+RC-10185,04/06/2024,06/04/2024,Recovered,Nissan,Sentra,2012,CG2E6BH8556D64282,NY,A. Morales,59,$614,206572,Damaged,Santander
+RC-10186,12/08/2024,02/02/2025,Recovered,Ford,F-150,2011,7E32A5GFA1C1DA5H0,PA,J. Chen,56,$676,73218,Excellent,Westlake Financial
+RC-10187,05/31/2024,07/14/2024,Recovered,BMW,X5,2023,2AHB15CC203D35EB5,OH,J. Chen,44,$334,44499,Excellent,Santander
+RC-10188,07/14/2024,08/28/2024,Recovered,Toyota,RAV4,2008,5DG663H8E4C5B5E3C,NY,A. Morales,45,$858,104986,Good,Westlake Financial
+RC-10189,01/24/2024,02/20/2024,Recovered,Honda,Pilot,2014,D1E05C4A23ADF63A3,TX,J. Chen,27,$1007,116880,Poor,Ally
+RC-10190,01/03/2025,,Closed - Unrecovered,BMW,5 Series,2011,A73EG9BF71D108AE1,OH,K. Brown,,,118127,,Ally
+RC-10191,12/21/2024,,In Progress,Chevrolet,Silverado,2019,GF99EBEG9989EGHC5,IL,M. Johnson,,,124401,,Auto Credit Corp
+RC-10192,03/12/2025,05/29/2025,Recovered,Nissan,Sentra,2022,1DC167F41C99C88F2,WA,J. Chen,78,$587,63269,Poor,Auto Credit Corp
+RC-10193,11/22/2024,01/14/2025,Recovered,Dodge,Charger,2022,5635CDCA93232EAB6,FL,K. Brown,53,$560,201651,Poor,Auto Credit Corp
+RC-10194,05/18/2025,06/05/2025,Recovered,BMW,X5,2014,EH989E4DDD9H3477H,TX,D. Garcia,18,$417,203796,Poor,Santander
+RC-10195,06/17/2025,08/14/2025,Recovered,Nissan,Altima,2009,7E19AG59DH75FCF84,FL,K. Brown,58,$717,184371,Excellent,First National Bank
+RC-10196,04/25/2024,07/09/2024,Recovered,Dodge,Durango,2012,HFA0887BF34C5B43B,WA,D. Garcia,75,$1165,205545,Damaged,Credit Union One
+RC-10197,07/17/2025,07/23/2025,Recovered,Chevrolet,Cruze,2013,823C7D4HF503CCD3E,NC,K. Brown,6,$1036,145716,Damaged,First National Bank
+RC-10198,08/31/2024,11/15/2024,Recovered,Nissan,Titan,2023,0H2A7F36DDAGCA22F,CA,A. Morales,76,$925,43544,Excellent,Auto Credit Corp
+RC-10199,08/09/2025,,Closed - Unrecovered,Chevrolet,Equinox,2013,95GA5F8657B0C7FHD,GA,A. Morales,,,43652,,Credit Union One
+RC-10200,06/25/2025,08/26/2025,Recovered,Dodge,Durango,2017,H7E238305067EFDC0,CA,M. Johnson,62,$991,176299,Excellent,Santander
+RC-10201,12/24/2024,,Pending,Ford,Explorer,2014,ADF6F1FA4G53ADFG4,NC,A. Morales,,,184253,,Auto Credit Corp
+RC-10202,04/16/2025,,Closed - Unrecovered,Honda,Accord,2018,068B1241A2F86BC7G,AZ,R. Patel,,,164679,,Credit Union One
+RC-10203,04/29/2024,,Closed - Unrecovered,Honda,Accord,2017,4FAH0E09DFC668HA0,IL,R. Patel,,,64862,,Westlake Financial
+RC-10204,12/01/2024,12/14/2024,Recovered,Honda,CR-V,2012,DAG7CFA77F8B55A53,GA,S. Williams,13,$1091,67574,Fair,Westlake Financial
+RC-10205,03/27/2025,,In Progress,Toyota,RAV4,2011,ECC92B11E862DF81A,TX,K. Brown,,,192077,,First National Bank
+RC-10206,02/25/2024,04/20/2024,Recovered,Ford,Fusion,2013,48340GFD56B852B64,CA,K. Brown,55,$651,96367,Excellent,Santander
+RC-10207,05/27/2024,,Closed - Unrecovered,Chevrolet,Malibu,2016,8H43670A0G0D52CB6,CA,S. Williams,,,160791,,Ally
+RC-10208,06/29/2025,08/20/2025,Recovered,Ford,Explorer,2021,EEC0BD4H92G4D4547,CA,K. Brown,52,$854,100295,Damaged,First National Bank
+RC-10209,06/29/2024,08/20/2024,Recovered,BMW,X5,2011,426F3BDC256530F30,GA,S. Williams,52,$321,93573,Damaged,Ally
+RC-10210,12/18/2024,03/03/2025,Recovered,Toyota,Tacoma,2020,77B89A29BFAH234HH,GA,R. Patel,75,$258,139484,Fair,Auto Credit Corp
+RC-10211,01/03/2025,,Closed - Unrecovered,Nissan,Titan,2021,C94CBA40H9B3H062H,FL,K. Brown,,,148540,,Santander
+RC-10212,01/28/2025,02/26/2025,Recovered,Nissan,Titan,2021,227E1H1G924C04C59,NY,K. Brown,29,$440,150515,Good,Credit Union One
+RC-10213,09/08/2024,11/28/2024,Recovered,Nissan,Altima,2010,412381A082FG9FD42,NY,T. Nguyen,81,$1009,31100,Excellent,Credit Union One
+RC-10214,10/25/2024,,Closed - Unrecovered,Chevrolet,Silverado,2008,FB17FCF7ACD2C06E4,NC,R. Patel,,,153251,,First National Bank
+RC-10215,05/28/2024,,Pending,Toyota,Camry,2012,75HG35D27AE6A0009,IL,M. Johnson,,,114562,,Ally
+RC-10216,04/30/2025,05/19/2025,Recovered,Dodge,Ram 1500,2021,A80494A839H87GEB3,AZ,K. Brown,19,$793,192023,Fair,Ally
+RC-10217,07/18/2024,,Pending,Dodge,Durango,2018,49FAABH14G5EA3B28,GA,J. Chen,,,200617,,First National Bank
+RC-10218,01/19/2025,,In Progress,Ford,Escape,2013,84E0838EH85FCB5GF,TX,T. Nguyen,,,84380,,Auto Credit Corp
+RC-10219,05/18/2025,08/05/2025,Recovered,Honda,Civic,2013,3B1H3BHEAB55A03AA,AZ,T. Nguyen,79,$652,54742,Poor,Santander
+RC-10220,06/11/2025,,In Progress,Nissan,Altima,2023,0H56BEG46C19GFA93,OH,S. Williams,,,36091,,Santander
+RC-10221,07/26/2024,10/05/2024,Recovered,BMW,X5,2020,3FHB407HDAA9EG630,NC,A. Morales,71,$290,24710,Poor,First National Bank
+RC-10222,02/19/2025,03/19/2025,Recovered,Toyota,Camry,2022,8715EB50A83E3A386,CA,K. Brown,28,$1076,175229,Fair,Credit Union One
+RC-10223,04/26/2024,07/12/2024,Recovered,Ford,F-150,2015,BDG75HC41F9DADBE5,FL,S. Williams,77,$1068,160072,Fair,Santander
+RC-10224,05/16/2024,08/05/2024,Recovered,Chevrolet,Silverado,2020,5A0ADB37H654D31H8,PA,A. Morales,81,$877,171309,Fair,Ally
+RC-10225,11/04/2024,12/28/2024,Recovered,Honda,Civic,2015,D99379103DACC780C,TX,A. Morales,54,$254,184046,Poor,Westlake Financial
+RC-10226,09/14/2024,12/02/2024,Recovered,Chevrolet,Cruze,2022,A58D60C842FD4F6FB,WA,D. Garcia,79,$1074,67417,Excellent,Auto Credit Corp
+RC-10227,08/22/2025,08/29/2025,Recovered,Ford,Fusion,2021,C80GC439DC4BC70DG,NY,R. Patel,7,$1161,182247,Damaged,Auto Credit Corp
+RC-10228,03/29/2024,06/04/2024,Recovered,Nissan,Sentra,2014,27F55EF282C2A9A05,TX,D. Garcia,67,$750,154230,Excellent,Santander
+RC-10229,04/10/2024,06/13/2024,Recovered,BMW,5 Series,2010,2A59CF3B0F475A057,AZ,R. Patel,64,$496,112103,Excellent,Ally
+RC-10230,03/13/2024,06/10/2024,Recovered,Dodge,Charger,2009,F5432D43G818GAG0A,OH,R. Patel,89,$590,184914,Damaged,Ally
+RC-10231,05/21/2024,06/21/2024,Recovered,Ford,Escape,2011,3557455F81HAG0160,IL,T. Nguyen,31,$802,133483,Damaged,Westlake Financial
+RC-10232,03/08/2024,05/06/2024,Recovered,BMW,5 Series,2010,HD9BCCCCD9AH480H5,TX,T. Nguyen,59,$339,64561,Good,First National Bank
+RC-10233,06/16/2025,,In Progress,BMW,3 Series,2018,HG3F2470FC6DE095A,OH,T. Nguyen,,,134518,,Auto Credit Corp
+RC-10234,07/02/2025,07/26/2025,Recovered,Nissan,Sentra,2012,CC92HGD439C091CA8,FL,K. Brown,24,$429,98943,Fair,First National Bank
+RC-10235,06/03/2025,08/25/2025,Recovered,Dodge,Durango,2017,0F892C28H458C1FH7,NC,S. Williams,83,$972,39243,Poor,First National Bank
+RC-10236,08/20/2025,,Pending,Nissan,Sentra,2015,65DB7499H021B4H4H,AZ,S. Williams,,,18195,,Westlake Financial
+RC-10237,11/11/2024,01/22/2025,Recovered,Toyota,RAV4,2014,5H96F69H8C2BD079B,PA,D. Garcia,72,$339,38186,Good,Santander
+RC-10238,02/28/2025,05/11/2025,Recovered,Dodge,Ram 1500,2012,D6F06F205E6CF33C3,NY,D. Garcia,72,$723,62021,Excellent,Ally
+RC-10239,01/30/2024,03/06/2024,Recovered,Dodge,Charger,2010,2G0HE496G5AE2C04G,TX,T. Nguyen,36,$754,109676,Excellent,Ally
+RC-10240,10/23/2024,12/30/2024,Recovered,Toyota,Camry,2010,15DB51764F44B26A1,OH,K. Brown,68,$904,123001,Poor,Auto Credit Corp
+RC-10241,06/07/2024,,Pending,Ford,Escape,2015,662497446H8CCAG4C,NC,S. Williams,,,60143,,Ally
+RC-10242,05/01/2024,05/18/2024,Recovered,Toyota,Camry,2012,4FD9H5CA0HDA3208A,NY,A. Morales,17,$1127,40297,Good,Credit Union One
+RC-10243,07/08/2024,,In Progress,Chevrolet,Malibu,2019,AC5E2G7631B65149D,IL,A. Morales,,,205145,,First National Bank
+RC-10244,01/10/2025,,In Progress,Chevrolet,Cruze,2013,H9DGGDEC9CBC542AF,CA,D. Garcia,,,89347,,Santander
+RC-10245,03/30/2025,06/09/2025,Recovered,Nissan,Rogue,2017,9H7868GA44H14CH49,WA,R. Patel,71,$667,31963,Poor,Auto Credit Corp
+RC-10246,02/17/2025,03/19/2025,Recovered,Toyota,Corolla,2021,5F42E63H02H0F5BE0,TN,R. Patel,30,$1108,22791,Good,Ally
+RC-10247,05/25/2025,,In Progress,Ford,F-150,2008,9G4C3BB556D30EG71,TX,D. Garcia,,,46230,,Santander
+RC-10248,01/20/2025,03/20/2025,Recovered,Honda,CR-V,2009,D367CHFH5201102CB,NY,K. Brown,59,$286,169938,Excellent,Credit Union One
+RC-10249,10/18/2024,10/26/2024,Recovered,Dodge,Ram 1500,2009,CG6253GH9HBEEFB47,CA,S. Williams,8,$278,59506,Good,Credit Union One
+RC-10250,04/16/2025,,In Progress,Toyota,Camry,2021,28E429GH26B4G15G3,OH,D. Garcia,,,67889,,Santander
+RC-10251,07/02/2025,08/08/2025,Recovered,Dodge,Charger,2009,F2639422E21HGB61F,TN,S. Williams,37,$521,67448,Excellent,Santander
+RC-10252,07/14/2025,07/17/2025,Recovered,Toyota,Tacoma,2013,2D9508135H231GCC4,NY,D. Garcia,3,$892,122547,Poor,First National Bank
+RC-10253,02/26/2025,04/04/2025,Recovered,Dodge,Charger,2013,E2HCDE602H3ACCE63,FL,A. Morales,37,$911,204392,Excellent,First National Bank
+RC-10254,11/17/2024,,Pending,Ford,F-150,2017,78HG3B85CC581698E,CA,M. Johnson,,,172239,,First National Bank
+RC-10255,12/03/2024,,Closed - Unrecovered,BMW,X5,2020,658DBDEH7B14C10EE,FL,S. Williams,,,139576,,Ally
+RC-10256,01/22/2024,,In Progress,Toyota,RAV4,2009,73846E1F9G6C77G8H,NY,T. Nguyen,,,38658,,Auto Credit Corp
+RC-10257,06/13/2024,09/02/2024,Recovered,Toyota,Corolla,2021,6EB6058FH8BCEBH51,OH,K. Brown,81,$574,197245,Good,First National Bank
+RC-10258,07/07/2024,,In Progress,Dodge,Durango,2022,6CH3FBC1965746F05,NY,R. Patel,,,195215,,Credit Union One
+RC-10259,10/15/2024,10/26/2024,Recovered,BMW,X5,2019,D797E983389D4DHHE,CA,S. Williams,11,$674,59596,Damaged,First National Bank
+RC-10260,04/09/2025,,Closed - Unrecovered,Ford,Fusion,2023,C4D76F0C729F4HHCF,NY,M. Johnson,,,176921,,Santander
+RC-10261,08/19/2025,,In Progress,Chevrolet,Equinox,2022,B079HDGH2B2A80G24,PA,A. Morales,,,16405,,Westlake Financial
+RC-10262,11/05/2024,01/30/2025,Recovered,Nissan,Titan,2012,922E187CF1CCAC775,AZ,T. Nguyen,86,$629,84000,Damaged,Westlake Financial
+RC-10263,03/22/2025,05/02/2025,Recovered,Nissan,Rogue,2023,5C736ACEAE4H98AG4,NC,K. Brown,41,$1004,144233,Good,Ally
+RC-10264,05/06/2024,05/18/2024,Recovered,BMW,3 Series,2017,DD1E822912HB547A4,TN,J. Chen,12,$458,118329,Poor,Credit Union One
+RC-10265,06/06/2024,06/17/2024,Recovered,Ford,Explorer,2023,092A939F5592DA3FA,CA,D. Garcia,11,$721,39261,Excellent,Westlake Financial
+RC-10266,02/12/2025,02/15/2025,Recovered,Chevrolet,Malibu,2014,C6F53C0H6F4C36107,NC,T. Nguyen,3,$1122,162602,Damaged,Santander
+RC-10267,01/12/2025,,Pending,Ford,Fusion,2013,HHAG0E4C031FH80CC,NY,M. Johnson,,,152125,,Santander
+RC-10268,07/18/2025,07/24/2025,Recovered,Toyota,Camry,2011,1H046G25A5067AH4F,WA,K. Brown,6,$775,190704,Excellent,Credit Union One
+RC-10269,12/15/2024,,Closed - Unrecovered,BMW,X5,2013,DB9E4HAHA30H355F6,PA,S. Williams,,,196052,,Ally
+RC-10270,02/08/2025,,Closed - Unrecovered,Dodge,Durango,2017,BCD64DA0CE771B5CH,CA,R. Patel,,,54956,,Ally
+RC-10271,05/11/2025,05/14/2025,Recovered,Dodge,Ram 1500,2022,2D27AA3497521F002,PA,K. Brown,3,$1130,75792,Good,Credit Union One
+RC-10272,08/13/2025,10/23/2025,Recovered,Ford,Fusion,2016,8H008G4AFDGED8G27,TN,K. Brown,71,$315,49382,Poor,Ally
+RC-10273,03/02/2025,,Closed - Unrecovered,Dodge,Ram 1500,2019,6673F54CD2BH9FDAA,NY,S. Williams,,,192452,,Auto Credit Corp
+RC-10274,03/06/2024,05/01/2024,Recovered,Chevrolet,Silverado,2015,CEEGGA7EC41448H07,CA,J. Chen,56,$366,175057,Damaged,First National Bank
+RC-10275,02/12/2024,,Pending,BMW,5 Series,2011,DCDG54507CG6CD95A,NC,S. Williams,,,90171,,Credit Union One
+RC-10276,09/29/2024,12/30/2024,Recovered,Chevrolet,Silverado,2021,G3C5HE6HH076GACA6,CA,J. Chen,92,$1022,103684,Poor,Santander
+RC-10277,03/20/2025,05/10/2025,Recovered,BMW,3 Series,2009,338B3431FH41F58AF,IL,R. Patel,51,$1027,198578,Excellent,Santander
+RC-10278,07/11/2025,,Pending,Dodge,Charger,2022,476HDFAG55C9FB115,FL,A. Morales,,,22311,,Credit Union One
+RC-10279,09/04/2024,,Closed - Unrecovered,Nissan,Rogue,2017,59BBG3GA3CF509692,TN,M. Johnson,,,106838,,Westlake Financial
+RC-10280,01/21/2025,,Pending,Toyota,Corolla,2015,B1D60CHHBHCDB4H26,NY,K. Brown,,,181844,,Santander
+RC-10281,03/02/2025,,Closed - Unrecovered,Honda,Pilot,2013,CC4C47CD058G92HC2,TX,R. Patel,,,45865,,Westlake Financial
+RC-10282,11/06/2024,01/08/2025,Recovered,Toyota,RAV4,2012,C2A88D60CG7H22860,WA,R. Patel,63,$278,51312,Damaged,Ally
+RC-10283,04/04/2025,07/07/2025,Recovered,Honda,Pilot,2010,63HEH19853742642C,IL,J. Chen,94,$583,65443,Damaged,Credit Union One
+RC-10284,08/06/2025,,Pending,Nissan,Altima,2014,51A319ED672B1F208,OH,D. Garcia,,,62319,,Santander
+RC-10285,01/26/2025,02/07/2025,Recovered,Ford,Explorer,2011,1FD5C94B9D4FBC8E8,CA,A. Morales,12,$367,68099,Fair,Credit Union One
+RC-10286,05/19/2025,,Pending,Nissan,Sentra,2020,9EF1BA38A12B53C20,TN,M. Johnson,,,52320,,Westlake Financial
+RC-10287,09/08/2024,,Pending,Nissan,Sentra,2021,91A6933DB8EE497D7,NY,A. Morales,,,57314,,Ally
+RC-10288,11/03/2024,12/24/2024,Recovered,Nissan,Altima,2011,6597D1679394E3FD9,OH,A. Morales,51,$965,196363,Fair,Ally
+RC-10289,01/05/2024,04/01/2024,Recovered,Ford,Fusion,2021,240HB731860C9G2G7,WA,A. Morales,87,$427,47706,Excellent,Westlake Financial
+RC-10290,01/10/2024,01/13/2024,Recovered,Chevrolet,Cruze,2016,44D636D99A042A93B,NY,K. Brown,3,$1026,59689,Damaged,Auto Credit Corp
+RC-10291,08/02/2025,,In Progress,Dodge,Durango,2013,BCBE2E16D4941E208,TN,A. Morales,,,99672,,Santander
+RC-10292,10/07/2024,01/03/2025,Recovered,BMW,X5,2022,01A4A81FHG769E498,GA,R. Patel,88,$780,101304,Poor,First National Bank
+RC-10293,04/09/2024,06/10/2024,Recovered,Dodge,Durango,2008,23GEBEGAG6853532B,TX,A. Morales,62,$692,113931,Poor,Ally
+RC-10294,03/04/2024,,Closed - Unrecovered,Ford,Escape,2022,A2HBBA7H3H76300H3,CA,S. Williams,,,185635,,Ally
+RC-10295,04/09/2025,,Pending,BMW,3 Series,2018,2BA4278C1G03DCAC2,IL,S. Williams,,,96576,,Credit Union One
+RC-10296,05/30/2024,07/09/2024,Recovered,Nissan,Sentra,2018,F913CE62AG93DBD04,NC,S. Williams,40,$867,166626,Damaged,Westlake Financial
+RC-10297,03/04/2025,03/25/2025,Recovered,Nissan,Rogue,2022,7808340D0566GH6AA,OH,A. Morales,21,$357,160409,Good,Auto Credit Corp
+RC-10298,07/18/2024,,In Progress,Toyota,Tacoma,2019,AADD74G1DA78A4G6B,GA,T. Nguyen,,,134591,,Auto Credit Corp
+RC-10299,06/24/2024,,Pending,Toyota,RAV4,2021,7BC86DGG29EA3D16F,TX,T. Nguyen,,,48150,,Credit Union One
+RC-10300,08/02/2024,,In Progress,Nissan,Titan,2010,663DG75G1D4109023,PA,A. Morales,,,69316,,Auto Credit Corp
+RC-10301,08/28/2024,09/25/2024,Recovered,Chevrolet,Cruze,2021,728G1CB0G203H0H6F,AZ,A. Morales,28,$563,62072,Excellent,Auto Credit Corp
+RC-10302,01/02/2025,02/09/2025,Recovered,Toyota,Camry,2010,68BBADDFF64E49955,NY,A. Morales,38,$1112,93505,Poor,Westlake Financial
+RC-10303,02/19/2025,,Closed - Unrecovered,BMW,X5,2008,015CHE50165506FD5,WA,D. Garcia,,,69941,,Santander
+RC-10304,01/18/2025,04/02/2025,Recovered,Honda,Civic,2012,F503GEH554F22AC99,PA,D. Garcia,74,$1144,114960,Fair,Santander
+RC-10305,07/11/2024,07/25/2024,Recovered,Ford,Fusion,2022,3FD4D62AD8GDF10GA,OH,D. Garcia,14,$586,117525,Fair,First National Bank
+RC-10306,05/04/2025,,In Progress,Chevrolet,Cruze,2010,H8D7F63C2FD40D906,PA,M. Johnson,,,152850,,Westlake Financial
+RC-10307,04/16/2025,06/29/2025,Recovered,Nissan,Titan,2010,F7044F36DE8508D2H,TX,M. Johnson,74,$290,56400,Poor,Ally
+RC-10308,03/09/2024,,In Progress,Nissan,Rogue,2014,8H5CG516HCDAA340G,AZ,M. Johnson,,,118985,,First National Bank
+RC-10309,04/27/2024,,In Progress,Ford,Explorer,2012,F50B1E9C67DABF1HB,TX,T. Nguyen,,,55238,,Santander
+RC-10310,08/09/2024,,In Progress,Toyota,Corolla,2009,81HA3133B4H2AGDE8,GA,J. Chen,,,19204,,Santander
+RC-10311,12/11/2024,,Closed - Unrecovered,Ford,F-150,2014,4B9B735A16F338HHE,CA,S. Williams,,,99768,,Auto Credit Corp
+RC-10312,11/19/2024,01/08/2025,Recovered,Ford,Fusion,2022,D3F3A7H5094682EBF,TN,D. Garcia,50,$467,192707,Fair,Westlake Financial
+RC-10313,05/08/2025,06/20/2025,Recovered,Chevrolet,Equinox,2022,G3E29E38F553BGFCD,TX,M. Johnson,43,$268,205135,Damaged,Santander
+RC-10314,05/17/2024,06/27/2024,Recovered,Dodge,Ram 1500,2009,193FA7FE183E442GF,NC,A. Morales,41,$909,31938,Excellent,First National Bank
+RC-10315,05/24/2024,06/10/2024,Recovered,Chevrolet,Silverado,2013,268EB5F4EDEF03E6B,OH,D. Garcia,17,$343,114016,Fair,Santander
+RC-10316,06/01/2025,,Pending,Honda,Pilot,2021,566AG7582C5E00G2B,FL,K. Brown,,,66305,,Auto Credit Corp
+RC-10317,01/14/2024,,Closed - Unrecovered,Chevrolet,Silverado,2019,0889G032HA8G2DHE8,WA,S. Williams,,,148590,,Ally
+RC-10318,02/29/2024,,In Progress,Honda,CR-V,2020,85EA63443E04E297A,CA,D. Garcia,,,119245,,Ally
+RC-10319,06/14/2025,08/08/2025,Recovered,Nissan,Altima,2021,EF93GFH75B35GC58H,NY,A. Morales,55,$419,59144,Excellent,First National Bank
