@@ -272,18 +272,29 @@ function barH(items, col) {
   }).join("");
   return svgWrap(bars, W, H);
 }
+function annularSector(cx, cy, r, ir, a0, a1, fill) {
+  // Split large sweeps so a full (or near-full) ring still renders, since a
+  // single SVG arc cannot draw a complete 360° circle.
+  const sweep = a1 - a0;
+  if (sweep > Math.PI * 1.9999) {
+    const mid = a0 + sweep / 2;
+    return annularSector(cx, cy, r, ir, a0, mid, fill) + annularSector(cx, cy, r, ir, mid, a1, fill);
+  }
+  const x1 = cx + r * Math.cos(a0), y1 = cy + r * Math.sin(a0);
+  const x2 = cx + r * Math.cos(a1), y2 = cy + r * Math.sin(a1);
+  const xi1 = cx + ir * Math.cos(a1), yi1 = cy + ir * Math.sin(a1);
+  const xi2 = cx + ir * Math.cos(a0), yi2 = cy + ir * Math.sin(a0);
+  const large = sweep > Math.PI ? 1 : 0;
+  return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi1} ${yi1} A ${ir} ${ir} 0 ${large} 0 ${xi2} ${yi2} Z" fill="${fill}"/>`;
+}
 function donut(items) {
   const W = 360, H = 280, cx = 150, cy = 140, r = 100, ir = 60;
   const total = items.reduce((a, b) => a + b.count, 0) || 1;
   let ang = -Math.PI / 2, paths = "";
   items.forEach((it, i) => {
+    if (it.count <= 0) return;
     const a2 = ang + (it.count / total) * Math.PI * 2;
-    const x1 = cx + r * Math.cos(ang), y1 = cy + r * Math.sin(ang);
-    const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
-    const xi1 = cx + ir * Math.cos(a2), yi1 = cy + ir * Math.sin(a2);
-    const xi2 = cx + ir * Math.cos(ang), yi2 = cy + ir * Math.sin(ang);
-    const large = a2 - ang > Math.PI ? 1 : 0;
-    paths += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi1} ${yi1} A ${ir} ${ir} 0 ${large} 0 ${xi2} ${yi2} Z" fill="${color(i)}"/>`;
+    paths += annularSector(cx, cy, r, ir, ang, a2, color(i));
     ang = a2;
   });
   const legend = items.map((it, i) => `<div class="legend-item"><span class="legend-swatch" style="background:${color(i)}"></span>${esc(it.label)} (${fmtNum(it.count)})</div>`).join("");
