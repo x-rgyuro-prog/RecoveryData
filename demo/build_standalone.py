@@ -23,9 +23,9 @@ css = read(os.path.join(HERE, "styles.css"))
 data = read(data_js)
 app = read(os.path.join(HERE, "app.js"))
 
-html = html.replace('<link rel="stylesheet" href="./styles.css" />', f"<style>\n{css}\n</style>")
-html = html.replace('<script src="./data.js"></script>', f"<script>\n{data}\n</script>")
-html = html.replace('<script src="./app.js"></script>', f"<script>\n{app}\n</script>")
+html = re.sub(r'<link rel="stylesheet" href="\./styles\.css[^"]*" />', lambda _: f"<style>\n{css}\n</style>", html)
+html = re.sub(r'<script src="\./data\.js[^"]*"></script>', lambda _: f"<script>\n{data}\n</script>", html)
+html = re.sub(r'<script src="\./app\.js[^"]*"></script>', lambda _: f"<script>\n{app}\n</script>", html)
 
 with open(out, "w", encoding="utf-8") as f:
     f.write(html)
