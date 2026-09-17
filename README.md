@@ -39,6 +39,25 @@ python3 demo/build_standalone.py demo/data.js demo/standalone.html
 # host or double-click demo/standalone.html
 ```
 
+### GitHub Pages (one-time setup)
+
+A workflow at `.github/workflows/deploy-pages.yml` publishes `demo/` automatically.
+
+1. Merge this to `main`.
+2. Repo **Settings → Pages → Build and deployment → Source: “GitHub Actions.”**
+3. The workflow runs on every push to `main` (or trigger it manually under the
+   **Actions** tab). The live URL appears in the workflow run and on the Pages
+   settings page — typically `https://<owner>.github.io/RecoveryData/`.
+
+Note: Pages on a **private** repo requires a paid plan; a public repo works on
+the free tier (only the empty app is published — never any data).
+
+### Other hosts
+
+- **Netlify / Vercel:** drag-and-drop the `demo/` folder (or the single
+  `standalone.html`) into their deploy UI — no build step, no config.
+- **Any static host / internal server / S3+CloudFront:** upload the three files.
+
 Recommended host settings: serve over **HTTPS**, and (optional hardening) set a
 Content-Security-Policy header such as:
 
