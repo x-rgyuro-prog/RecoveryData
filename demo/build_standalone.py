@@ -23,6 +23,13 @@ css = read(os.path.join(HERE, "styles.css"))
 data = read(data_js)
 app = read(os.path.join(HERE, "app.js"))
 
+# The single-file build inlines the script, so its CSP must allow inline scripts.
+standalone_csp = (
+    '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; '
+    "script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; "
+    "connect-src 'self'; base-uri 'none'; form-action 'none'\" />"
+)
+html = re.sub(r'<meta\s+http-equiv="Content-Security-Policy"[\s\S]*?/>', lambda _: standalone_csp, html)
 html = re.sub(r'<link rel="stylesheet" href="\./styles\.css[^"]*" />', lambda _: f"<style>\n{css}\n</style>", html)
 html = re.sub(r'<script src="\./data\.js[^"]*"></script>', lambda _: f"<script>\n{data}\n</script>", html)
 html = re.sub(r'<script src="\./app\.js[^"]*"></script>', lambda _: f"<script>\n{app}\n</script>", html)
