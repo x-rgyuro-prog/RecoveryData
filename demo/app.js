@@ -116,6 +116,26 @@ function completionByCategory(catKey, limit) {
     .sort((a, b) => b.count - a.count).slice(0, limit);
 }
 
+/* ---------------- creative-chart data ---------------- */
+const DOW_IDX = { Monday: 0, Tuesday: 1, Wednesday: 2, Thursday: 3, Friday: 4, Saturday: 5, Sunday: 6 };
+function dayHourAgg(metric) {
+  const grid = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({ c: 0, vals: [] })));
+  STATE.records.forEach((r) => {
+    const di = DOW_IDX[clean(r[H.day])], h = Number(clean(r[H.hour]));
+    if (di === undefined || !Number.isFinite(h) || h < 0 || h > 23) return;
+    const cell = grid[di][h]; cell.c++;
+    if (metric === "turnaround") { const t = toNum(r[H.mTurnaround]); if (t && t > 0) cell.vals.push(t); }
+  });
+  return grid.map((row) => row.map((cell) => (metric === "turnaround" ? (cell.vals.length ? median(cell.vals) : 0) : cell.c)));
+}
+function lerp(a, b, t) { return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
+function heatColor(t) {
+  const stops = [[16, 24, 40], [79, 140, 255], [34, 211, 166], [246, 183, 60]];
+  if (t <= 0) return `rgb(${stops[0].join(",")})`;
+  const seg = 1 / (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(t / seg));
+  return `rgb(${lerp(stops[i], stops[i + 1], (t - i * seg) / seg).join(",")})`;
+}
+
 /* ---------------- SVG primitives ---------------- */
 function svg(inner, w, h, fixedW) { return `<svg viewBox="0 0 ${w} ${h}" width="${fixedW ? w : "100%"}" height="${h}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`; }
 function lineChart(points, key, colr, fmt) {
@@ -204,6 +224,33 @@ function histogramSvg(values, capPct, colr) {
   return { cap, svg: barV(bins, colr) };
 }
 
+function heatmap(metric) {
+  const grid = dayHourAgg(metric), days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], max = Math.max(1, ...grid.flat());
+  const W = 560, padL = 42, padT = 24, right = 12, cw = (W - padL - right) / 24, ch = 28, Ht = padT + 7 * ch + 34;
+  let cells = "", labels = "";
+  for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) { const v = grid[d][h], x = padL + h * cw, y = padT + d * ch; cells += `<rect x="${x.toFixed(1)}" y="${y}" width="${(cw - 1.5).toFixed(1)}" height="${ch - 2}" rx="2" fill="${v > 0 ? heatColor(v / max) : "#0e1428"}"/>`; }
+  days.forEach((d, i) => (labels += `<text x="${padL - 6}" y="${padT + i * ch + ch / 2 + 3}" fill="#9aa7c2" font-size="10" text-anchor="end">${d}</text>`));
+  for (let h = 0; h < 24; h += 3) labels += `<text x="${(padL + h * cw + cw / 2).toFixed(1)}" y="${padT - 8}" fill="#9aa7c2" font-size="9" text-anchor="middle">${String(h).padStart(2, "0")}</text>`;
+  const ly = padT + 7 * ch + 16; let leg = "";
+  for (let i = 0; i < 40; i++) leg += `<rect x="${padL + i * 4}" y="${ly}" width="4" height="8" fill="${heatColor(i / 39)}"/>`;
+  leg += `<text x="${padL - 6}" y="${ly + 8}" fill="#9aa7c2" font-size="9" text-anchor="end">low</text><text x="${padL + 40 * 4 + 6}" y="${ly + 8}" fill="#9aa7c2" font-size="9">high (${metric === "turnaround" ? Math.round(max) + "m" : fmtNum(max)})</text>`;
+  return svg(cells + labels + leg, W, Ht);
+}
+function scatterChart(yKey, yLabel) {
+  const xKey = H.mDispatchArrive;
+  const pts = STATE.records.map((r) => ({ x: toNum(r[xKey]), y: toNum(r[yKey]) })).filter((p) => p.x != null && p.y != null && p.x > 0 && p.y > 0);
+  if (pts.length < 3) return `<div class="empty-hint">Not enough timed dispatches in this range.</div>`;
+  const xMax = percentile(pts.map((p) => p.x), 97) || 1, yMax = percentile(pts.map((p) => p.y), 97) || 1;
+  const W = 560, Ht = 300, pad = { l: 48, r: 14, t: 14, b: 42 }, iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b;
+  const X = (v) => pad.l + (Math.min(v, xMax) / xMax) * iw, Y = (v) => pad.t + ih - (Math.min(v, yMax) / yMax) * ih;
+  let g = "";
+  for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="10" text-anchor="end">${Math.round(yMax - (yMax / 4) * t)}</text>`; }
+  for (let t = 0; t <= 4; t++) { const gx = pad.l + (iw / 4) * t; g += `<text x="${gx}" y="${Ht - 24}" fill="#9aa7c2" font-size="10" text-anchor="middle">${Math.round((xMax / 4) * t)}</text>`; }
+  const dots = pts.map((p) => `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="2.5" fill="${color(0)}" opacity="0.32"/>`).join("");
+  const ax = `<text x="${pad.l + iw / 2}" y="${Ht - 6}" fill="#9aa7c2" font-size="11" text-anchor="middle">Response time — dispatch → on scene (min)</text><text x="14" y="${pad.t + ih / 2}" fill="#9aa7c2" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${pad.t + ih / 2})">${esc(yLabel)} (min)</text>`;
+  return svg(g + dots + ax, W, Ht);
+}
+
 /* categorical dispatcher used by many widgets */
 function catChart(items, view, centerLabel) {
   if (view === "pie") return pie(items, centerLabel, false);
@@ -280,6 +327,24 @@ const WIDGETS = {
     controls: [{ group: "view", opts: [["bar", "Bar"], ["pie", "Pie"]] }],
     sub: () => "Handled per FR crew ID",
     render(s) { return catChart(counts(H.assignee, 12), s.view, "dispatches"); },
+  },
+  supervisor: {
+    title: "Dispatches by Supervisor", defaults: { view: "bar" },
+    controls: [{ group: "view", opts: [["bar", "Bar"], ["pie", "Pie"]] }],
+    sub: () => "Total dispatches per supervising lead",
+    render(s) { return catChart(counts(H.supervisor, 14), s.view, "dispatches"); },
+  },
+  heat: {
+    title: "Dispatch Heatmap — Day × Hour", defaults: { metric: "count" },
+    controls: [{ group: "metric", opts: [["count", "Volume"], ["turnaround", "Median turnaround"]] }],
+    sub: (s) => (s.metric === "turnaround" ? "Median turnaround (min) by day & hour" : "Dispatch volume by day & hour"),
+    render(s) { return heatmap(s.metric); },
+  },
+  scatter: {
+    title: "Response vs Work Time", defaults: { y: "onscene" },
+    controls: [{ group: "y", opts: [["onscene", "On-scene"], ["turnaround", "Turnaround"]] }],
+    sub: (s) => `Each dot = one dispatch; response vs ${s.y === "turnaround" ? "total turnaround" : "on-scene work"}`,
+    render(s) { return s.y === "turnaround" ? scatterChart(H.mTurnaround, "Turnaround") : scatterChart(H.mOnScene, "On-scene work"); },
   },
   completion: {
     title: "Completion Rate by Group", defaults: { group: "milestone" },
@@ -361,10 +426,10 @@ function page(ids, extras) { return `<div class="grid chart-grid">${ids.map((id)
 function renderOverview() { return buildKpis() + `<div class="grid chart-grid" style="margin-top:16px">${widgetCard("volume", "span-2")}${widgetCard("dtype")}${widgetCard("status")}${widgetCard("completion", "span-2")}</div>`; }
 function renderPerformance() {
   const hist = histogramSvg(posNums(H.mTurnaround), 95, color(2));
-  return `<div class="grid chart-grid">${widgetCard("lifecycle", "span-2")}${widgetCard("turnTrend")}${staticCard("Turnaround Distribution", `Minutes, capped at 95th pct (${Math.round(hist.cap)} min)`, hist.svg)}${widgetCard("turnLoc")}${widgetCard("turnType")}</div>`;
+  return `<div class="grid chart-grid">${widgetCard("lifecycle", "span-2")}${widgetCard("turnTrend")}${staticCard("Turnaround Distribution", `Minutes, capped at 95th pct (${Math.round(hist.cap)} min)`, hist.svg)}${widgetCard("scatter")}${widgetCard("turnLoc")}${widgetCard("turnType")}</div>`;
 }
-function renderPatterns() { return `<div class="grid chart-grid">${widgetCard("hour")}${widgetCard("dow")}${widgetCard("location")}${widgetCard("milestone")}</div>`; }
-function renderEvents() { return `<div class="grid chart-grid">${widgetCard("reason", "span-2")}${widgetCard("l0")}${widgetCard("resolution")}${widgetCard("crew")}</div>`; }
+function renderPatterns() { return `<div class="grid chart-grid">${widgetCard("heat", "span-2")}${widgetCard("hour")}${widgetCard("dow")}${widgetCard("location")}${widgetCard("milestone")}</div>`; }
+function renderEvents() { return `<div class="grid chart-grid">${widgetCard("reason", "span-2")}${widgetCard("l0")}${widgetCard("resolution")}${widgetCard("crew")}${widgetCard("supervisor")}</div>`; }
 
 const EXPLORER_COLS = [H.date, H.vh6, H.status, H.type, H.reason, H.location, H.assignee, H.action, H.mDispatchArrive, H.mTurnaround, H.ridersIn];
 const EXPLORER_LABELS = { [H.vh6]: "VH6", [H.action]: "Resolution", [H.mDispatchArrive]: "Response (min)", [H.mTurnaround]: "Turnaround (min)", [H.ridersIn]: "Riders" };
@@ -406,8 +471,15 @@ const PAGES = [
 ];
 let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", maxDate: null };
 
-const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["30d", "Last 30 days"]];
+const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["30d", "Last 30 days"], ["custom", "Custom"]];
+const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 function applyRange() {
+  if (STATE.range === "custom") {
+    const from = STATE.customFrom ? new Date(STATE.customFrom + "T00:00:00") : null;
+    const to = STATE.customTo ? new Date(STATE.customTo + "T23:59:59") : null;
+    STATE.records = STATE.allRecords.filter((r) => { const d = parseDate(r[H.date]); if (!d) return false; if (from && d < from) return false; if (to && d > to) return false; return true; });
+    return;
+  }
   if (STATE.range === "all" || !STATE.maxDate) { STATE.records = STATE.allRecords; return; }
   const days = STATE.range === "30d" ? 30 : 365;
   const cutoff = STATE.maxDate.getTime() - days * 86400000;
@@ -415,10 +487,22 @@ function applyRange() {
 }
 function renderRange() {
   const el = document.getElementById("rangeControls");
-  if (el) el.innerHTML = `<div class="btn-group">${RANGES.map(([id, l]) => `<button class="toggle ${STATE.range === id ? "active" : ""}" data-range="${id}">${l}</button>`).join("")}</div>`;
+  if (!el) return;
+  const btns = `<div class="btn-group">${RANGES.map(([id, l]) => `<button class="toggle ${STATE.range === id ? "active" : ""}" data-range="${id}">${l}</button>`).join("")}</div>`;
+  const inputs = STATE.range === "custom"
+    ? `<input type="date" class="date-input" id="rangeFrom" value="${STATE.customFrom || ""}" min="${STATE.customMin || ""}" max="${STATE.customMax || ""}"><span class="muted" style="align-self:center;font-size:12px">to</span><input type="date" class="date-input" id="rangeTo" value="${STATE.customTo || ""}" min="${STATE.customMin || ""}" max="${STATE.customMax || ""}">`
+    : "";
+  el.innerHTML = btns + inputs;
+}
+function onRangeInput(e) {
+  if (e.target.id !== "rangeFrom" && e.target.id !== "rangeTo") return;
+  const from = document.getElementById("rangeFrom"), to = document.getElementById("rangeTo");
+  if (from) STATE.customFrom = from.value;
+  if (to) STATE.customTo = to.value;
+  applyRange(); updateSubtitle(); renderContent();
 }
 function updateSubtitle() {
-  const label = STATE.range === "all" ? "all time" : STATE.range === "12m" ? "last 12 months" : "last 30 days";
+  const label = STATE.range === "all" ? "all time" : STATE.range === "12m" ? "last 12 months" : STATE.range === "30d" ? "last 30 days" : `${STATE.customFrom || "…"} → ${STATE.customTo || "…"}`;
   const extra = STATE.range === "all" ? "" : ` of ${fmtNum(STATE.allRecords.length)}`;
   document.getElementById("subtitle").textContent = `${fmtNum(STATE.records.length)}${extra} dispatches · ${label} · autonomous fleet-response operations`;
 }
@@ -437,14 +521,19 @@ function renderContent() { document.getElementById("content").innerHTML = (PAGES
 function boot(text) {
   const { headers, rows } = parseCSV(text);
   STATE.headers = headers; STATE.allRecords = rows;
-  let mx = null; rows.forEach((r) => { const d = parseDate(r[H.date]); if (d && (!mx || d > mx)) mx = d; });
-  STATE.maxDate = mx;
+  let mx = null, mn = null; rows.forEach((r) => { const d = parseDate(r[H.date]); if (d) { if (!mx || d > mx) mx = d; if (!mn || d < mn) mn = d; } });
+  STATE.maxDate = mx; STATE.minDate = mn;
+  STATE.customMin = mn ? toISO(mn) : ""; STATE.customMax = mx ? toISO(mx) : "";
+  STATE.customFrom = STATE.customMin; STATE.customTo = STATE.customMax;
   const params = new URLSearchParams(location.search);
   const req = params.get("page"); if (req && PAGES.some((p) => p.id === req)) STATE.page = req;
   const rng = params.get("range"); if (rng && RANGES.some((r) => r[0] === rng)) STATE.range = rng;
+  if (params.get("from")) STATE.customFrom = params.get("from");
+  if (params.get("to")) STATE.customTo = params.get("to");
   applyRange();
   document.addEventListener("click", onToggle);
   document.addEventListener("click", onRange);
+  document.addEventListener("change", onRangeInput);
   renderRange(); updateSubtitle(); renderNav(); renderContent();
   window.__READY__ = true;
 }
