@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================
-   Fleet Response — bespoke recovery-operations dashboard
+   Fleet Response — operations analytics
    Tailored to the FR Historical Data (Responses) dataset.
    ============================================================ */
 
@@ -50,25 +50,22 @@ const H = {
   supervisor: "Supervisor",
   ridersIn: "Riders in The VH6",
   ridersRec: "Riders Recovered",
-  shuttle: "Did we use a 3rd Party Rider Shuttle?",
   botDmg: "Was the bot damaged?",
   training: "Training Dispatch",
-  flatbed: "Was an Internal or External Flatbed Used?",
-  month: "Month", hour: "24hr", day: "Day",
+  day: "Day", hour: "24hr", week: "Week of the Year",
   mCreatedAccept: "created_to_accepted_min",
   mAcceptArrive: "accepted_to_arrived_min",
   mDispatchArrive: "dispatch_to_arrived_on_scene_mins",
   mOnScene: "on_scene_work_mins",
-  mClear: "dispatch_to_clear_scene_mins",
   mReturn: "return_to_base_mins",
   mTurnaround: "turnaround_time_mins",
+  deadhead: "deadhead_percentage",
 };
 
 /* ---------------- value helpers ---------------- */
-const EMPTY = new Set(["", "n/a", "na", "null", "tbd", "-", "none"]);
+const EMPTY = new Set(["", "n/a", "na", "null", "tbd", "none"]);
 function clean(v) { const s = (v ?? "").trim(); return EMPTY.has(s.toLowerCase()) ? "" : s; }
 function toNum(v) { const s = (v ?? "").replace(/[$,%\s]/g, ""); if (s === "" || EMPTY.has(s.toLowerCase())) return null; const n = Number(s); return Number.isFinite(n) ? n : null; }
-function toBool(v) { const s = (v ?? "").trim().toUpperCase(); if (s === "TRUE") return true; if (s === "FALSE") return false; return null; }
 
 const MONTHS = { jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11 };
 function parseDate(s) {
@@ -79,7 +76,6 @@ function parseDate(s) {
   return null;
 }
 
-/* aggregate helpers over STATE.records */
 function col(k) { return STATE.records.map((r) => r[k]); }
 function cleaned(k) { return col(k).map(clean).filter((v) => v !== ""); }
 function counts(k, limit) {
@@ -94,71 +90,78 @@ const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 function median(a) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 function percentile(a, p) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))]; }
 
-function rate(k, isTrue) {
-  const vals = cleaned(k).map((v) => v.toUpperCase());
-  const t = vals.filter((v) => v === "TRUE").length;
-  const f = vals.filter((v) => v === "FALSE").length;
-  return t + f ? (isTrue ? t : f) / (t + f) * 100 : 0;
-}
-function avgByCategory(catKey, numKey, limit = 10) {
+function avgByCategory(catKey, numKey, limit = 10, agg = median) {
   const groups = new Map();
-  STATE.records.forEach((r) => {
-    const c = clean(r[catKey]); const n = toNum(r[numKey]);
-    if (!c || n === null || n <= 0) return;
-    const g = groups.get(c) || []; g.push(n); groups.set(c, g);
-  });
-  return [...groups.entries()]
-    .map(([label, arr]) => ({ label, val: mean(arr), count: arr.length }))
-    .filter((x) => x.count >= 3)
-    .sort((a, b) => b.val - a.val).slice(0, limit);
+  STATE.records.forEach((r) => { const c = clean(r[catKey]); const n = toNum(r[numKey]); if (!c || n === null || n <= 0) return; const g = groups.get(c) || []; g.push(n); groups.set(c, g); });
+  return [...groups.entries()].map(([label, arr]) => ({ label, val: agg(arr), count: arr.length }))
+    .filter((x) => x.count >= 5).sort((a, b) => b.val - a.val).slice(0, limit);
 }
-function monthly(dateKey) {
+function monthly(dateKey, valueFn) {
   const m = new Map();
-  STATE.records.forEach((r) => { const d = parseDate(r[dateKey]); if (!d) return; const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; m.set(k, (m.get(k) || 0) + 1); });
-  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([period, count]) => ({ period, count }));
+  STATE.records.forEach((r) => { const d = parseDate(r[dateKey]); if (!d) return; const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; const g = m.get(k) || []; g.push(r); m.set(k, g); });
+  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([period, rs]) => ({ period, count: rs.length, val: valueFn ? valueFn(rs) : rs.length }));
+}
+const DOW = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+function dayOfWeek() {
+  const m = new Map(); cleaned(H.day).forEach((v) => m.set(v, (m.get(v) || 0) + 1));
+  return DOW.filter((d) => m.has(d)).map((d) => ({ label: d.slice(0, 3), count: m.get(d) }));
+}
+function hourOfDay() {
+  const m = new Map();
+  cleaned(H.hour).forEach((v) => { const n = Number(v); if (Number.isFinite(n)) { const k = String(n).padStart(2, "0"); m.set(k, (m.get(k) || 0) + 1); } });
+  return [...m.keys()].sort().map((k) => ({ label: k, count: m.get(k) }));
+}
+function pctTrue(k) {
+  const v = cleaned(k).map((x) => x.toUpperCase());
+  const t = v.filter((x) => x === "TRUE").length, f = v.filter((x) => x === "FALSE").length;
+  return t + f ? (t / (t + f)) * 100 : 0;
 }
 
 /* ---------------- SVG charts ---------------- */
 const fmtPeriod = (p) => { const [y, mo] = p.split("-"); return mo ? new Date(y, mo - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" }) : p; };
 function svg(inner, w, h, fixedW) { return `<svg viewBox="0 0 ${w} ${h}" width="${fixedW ? w : "100%"}" height="${h}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`; }
 
-function areaChart(points, col) {
-  const W = 560, H = 280, pad = { l: 44, r: 16, t: 16, b: 34 };
+function lineChart(points, key, colr, fmt) {
+  const W = 560, Ht = 280, pad = { l: 48, r: 16, t: 16, b: 34 };
   if (!points.length) return `<div class="empty-hint">No dated records.</div>`;
-  const max = Math.max(...points.map((p) => p.count), 1);
-  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+  const max = Math.max(...points.map((p) => p[key]), 1);
+  const iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b;
   const x = (i) => pad.l + (points.length === 1 ? iw / 2 : (i / (points.length - 1)) * iw);
   const y = (v) => pad.t + ih - (v / max) * ih;
-  const line = points.map((p, i) => `${x(i)},${y(p.count)}`).join(" ");
+  const line = points.map((p, i) => `${x(i)},${y(p[key])}`).join(" ");
   const area = `${pad.l},${pad.t + ih} ${line} ${x(points.length - 1)},${pad.t + ih}`;
   let g = "";
-  for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="11" text-anchor="end">${fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
+  for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="11" text-anchor="end">${fmt ? fmt(max - (max / 4) * t) : fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
   const step = Math.ceil(points.length / 8);
-  const labels = points.map((p, i) => (i % step === 0 ? `<text x="${x(i)}" y="${H - 10}" fill="#9aa7c2" font-size="11" text-anchor="middle">${fmtPeriod(p.period)}</text>` : "")).join("");
-  const dots = points.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.count)}" r="3" fill="${col}"/>`).join("");
-  return svg(`${g}<polygon points="${area}" fill="${col}" opacity="0.14"/><polyline points="${line}" fill="none" stroke="${col}" stroke-width="2.5"/>${dots}${labels}`, W, H);
+  const labels = points.map((p, i) => (i % step === 0 ? `<text x="${x(i)}" y="${Ht - 10}" fill="#9aa7c2" font-size="11" text-anchor="middle">${fmtPeriod(p.period)}</text>` : "")).join("");
+  const dots = points.map((p, i) => `<circle cx="${x(i)}" cy="${y(p[key])}" r="3" fill="${colr}"/>`).join("");
+  return svg(`${g}<polygon points="${area}" fill="${colr}" opacity="0.12"/><polyline points="${line}" fill="none" stroke="${colr}" stroke-width="2.5"/>${dots}${labels}`, W, Ht);
 }
-function barV(bins, col) {
-  const W = 560, H = 260, pad = { l: 40, r: 12, t: 14, b: 58 };
+function barV(bins, colr, rotate) {
+  const W = 560, Ht = 260, pad = { l: 40, r: 12, t: 14, b: rotate ? 52 : 34 };
   const max = Math.max(...bins.map((b) => b.count), 1);
-  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b, bw = iw / bins.length;
+  const iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b, bw = iw / bins.length;
   let g = "";
   for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="11" text-anchor="end">${fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
-  const bars = bins.map((b, i) => { const h = (b.count / max) * ih, bx = pad.l + i * bw + 3, by = pad.t + ih - h; return `<rect x="${bx}" y="${by}" width="${bw - 6}" height="${h}" rx="4" fill="${col}"/><text x="${bx + (bw - 6) / 2}" y="${H - 40}" fill="#9aa7c2" font-size="9" text-anchor="end" transform="rotate(-35 ${bx + (bw - 6) / 2} ${H - 40})">${esc(b.label)}</text>`; }).join("");
-  return svg(`${g}${bars}`, W, H);
+  const bars = bins.map((b, i) => {
+    const h = (b.count / max) * ih, bx = pad.l + i * bw + 3, by = pad.t + ih - h, cx = bx + (bw - 6) / 2;
+    const lbl = rotate ? `<text x="${cx}" y="${Ht - 36}" fill="#9aa7c2" font-size="9" text-anchor="end" transform="rotate(-35 ${cx} ${Ht - 36})">${esc(b.label)}</text>` : `<text x="${cx}" y="${Ht - 16}" fill="#9aa7c2" font-size="10" text-anchor="middle">${esc(b.label)}</text>`;
+    return `<rect x="${bx}" y="${by}" width="${bw - 6}" height="${h}" rx="4" fill="${colr}"/>${lbl}`;
+  }).join("");
+  return svg(`${g}${bars}`, W, Ht);
 }
 function barH(items, fmtRight) {
   if (!items.length) return `<div class="empty-hint">No data.</div>`;
-  const rowH = 26, pad = { l: 150, r: 56, t: 8, b: 8 }, W = 560, H = pad.t + pad.b + items.length * rowH;
+  const rowH = 26, pad = { l: 160, r: 60, t: 8, b: 8 }, W = 560, Ht = pad.t + pad.b + items.length * rowH;
   const max = Math.max(...items.map((i) => i.val ?? i.count), 1), iw = W - pad.l - pad.r;
   const bars = items.map((it, i) => {
     const v = it.val ?? it.count, y = pad.t + i * rowH, w = Math.max((v / max) * iw, 1), c = color(i);
     const right = fmtRight ? fmtRight(it) : fmtNum(v);
-    return `<text x="${pad.l - 8}" y="${y + rowH / 2 + 4}" fill="#c8d2e6" font-size="11" text-anchor="end">${esc(it.label.length > 24 ? it.label.slice(0, 23) + "…" : it.label)}</text>` +
+    return `<text x="${pad.l - 8}" y="${y + rowH / 2 + 4}" fill="#c8d2e6" font-size="11" text-anchor="end">${esc(it.label.length > 26 ? it.label.slice(0, 25) + "…" : it.label)}</text>` +
       `<rect x="${pad.l}" y="${y + 4}" width="${w}" height="${rowH - 10}" rx="4" fill="${c}"/>` +
       `<text x="${pad.l + w + 6}" y="${y + rowH / 2 + 4}" fill="#9aa7c2" font-size="11">${esc(right)}</text>`;
   }).join("");
-  return svg(bars, W, H);
+  return svg(bars, W, Ht);
 }
 function annularSector(cx, cy, r, ir, a0, a1, fill) {
   const sweep = a1 - a0;
@@ -169,12 +172,12 @@ function annularSector(cx, cy, r, ir, a0, a1, fill) {
   return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi1} ${yi1} A ${ir} ${ir} 0 ${large} 0 ${xi2} ${yi2} Z" fill="${fill}"/>`;
 }
 function donut(items, centerLabel) {
-  const W = 360, H = 280, cx = 150, cy = 140, r = 100, ir = 62;
+  const W = 360, Ht = 280, cx = 150, cy = 140, r = 100, ir = 62;
   const total = items.reduce((a, b) => a + b.count, 0) || 1;
   let ang = -Math.PI / 2, paths = "";
   items.forEach((it, i) => { if (it.count <= 0) return; const a2 = ang + (it.count / total) * Math.PI * 2; paths += annularSector(cx, cy, r, ir, ang, a2, color(i)); ang = a2; });
   const legend = items.map((it, i) => `<div class="legend-item"><span class="legend-swatch" style="background:${color(i)}"></span>${esc(it.label)} (${fmtNum(it.count)})</div>`).join("");
-  return `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">${svg(paths + `<text x="${cx}" y="${cy - 2}" fill="#e7ecf5" font-size="22" font-weight="800" text-anchor="middle">${fmtNum(total)}</text><text x="${cx}" y="${cy + 18}" fill="#9aa7c2" font-size="11" text-anchor="middle">${esc(centerLabel || "total")}</text>`, W, H, true)}<div class="legend" style="flex-direction:column">${legend}</div></div>`;
+  return `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">${svg(paths + `<text x="${cx}" y="${cy - 2}" fill="#e7ecf5" font-size="22" font-weight="800" text-anchor="middle">${fmtNum(total)}</text><text x="${cx}" y="${cy + 18}" fill="#9aa7c2" font-size="11" text-anchor="middle">${esc(centerLabel || "total")}</text>`, W, Ht, true)}<div class="legend" style="flex-direction:column">${legend}</div></div>`;
 }
 function stagesBar(stages) {
   const valid = stages.filter((s) => s.val > 0);
@@ -184,99 +187,91 @@ function stagesBar(stages) {
   let x = pad, segs = "";
   valid.forEach((s, i) => { const w = (s.val / total) * iw; segs += `<rect x="${x}" y="${y}" width="${Math.max(w - 1, 1)}" height="${barH}" rx="3" fill="${color(i)}"/>` + (w > 46 ? `<text x="${x + w / 2}" y="${y + barH / 2 + 4}" fill="#0b1020" font-size="12" font-weight="700" text-anchor="middle">${s.val.toFixed(1)}</text>` : ""); x += w; });
   const legend = valid.map((s, i) => `<div class="legend-item"><span class="legend-swatch" style="background:${color(i)}"></span>${esc(s.label)}: <b style="color:#e7ecf5;margin-left:4px">${fmtMin(s.val)}</b></div>`).join("");
-  return `${svg(`<text x="${pad}" y="18" fill="#9aa7c2" font-size="12">Average end-to-end turnaround: <tspan fill="#e7ecf5" font-weight="700">${total.toFixed(1)} min</tspan></text>${segs}`, W, y + barH + 10, false)}<div class="legend">${legend}</div>`;
+  return `${svg(`<text x="${pad}" y="18" fill="#9aa7c2" font-size="12">Median end-to-end turnaround: <tspan fill="#e7ecf5" font-weight="700">${total.toFixed(1)} min</tspan></text>${segs}`, W, y + barH + 10, false)}<div class="legend">${legend}</div>`;
+}
+function histogram(values, capPct, colr) {
+  const cap = percentile(values, capPct) || 1;
+  const capped = values.filter((n) => n <= cap), bc = 12, w = cap / bc;
+  const bins = Array.from({ length: bc }, (_, i) => ({ from: i * w, to: (i + 1) * w, count: 0, label: `${Math.round(i * w)}` }));
+  capped.forEach((n) => { let idx = Math.floor(n / w); if (idx >= bc) idx = bc - 1; if (idx < 0) idx = 0; bins[idx].count++; });
+  return { bins, cap, svg: barV(bins, colr) };
 }
 
-/* ---------------- KPI + pages ---------------- */
+/* ---------------- KPIs ---------------- */
 function kpi(label, value, hint, i) {
   return `<div class="card kpi"><div class="kpi-accent" style="background:${color(i)}"></div><div class="kpi-label">${esc(label)}</div><div class="kpi-value">${esc(value)}</div>${hint ? `<div class="kpi-hint">${esc(hint)}</div>` : ""}</div>`;
 }
-function card(title, sub, body, cls) { return `<div class="card ${cls || ""}"><h3 class="card-title">${esc(title)}</h3>${sub ? `<div class="card-sub">${esc(sub)}</div>` : ""}${body}</div>`; }
-
 function buildKpis() {
   const total = STATE.records.length;
-  const statusC = counts(H.status);
-  const completed = (statusC.find((s) => /complete/i.test(s.label)) || { count: 0 }).count;
+  const completed = (counts(H.status).find((s) => /complete/i.test(s.label)) || { count: 0 }).count;
   const l0 = cleaned(H.l0);
-  const fp = l0.filter((v) => /false positive/i.test(v)).length;
-  const tp = l0.filter((v) => /true positive/i.test(v)).length;
-  const actionC = counts(H.action);
-  const towed = (actionC.find((a) => /tow/i.test(a.label)) || { count: 0 }).count;
-  const ridersOnboard = cleaned(H.ridersIn).filter((v) => v.toUpperCase() === "TRUE").length;
+  const fp = l0.filter((v) => /false positive/i.test(v)).length, tp = l0.filter((v) => /true positive/i.test(v)).length;
   const turn = posNums(H.mTurnaround);
+  const ridersPct = pctTrue(H.ridersIn);
+  const deadhead = nums(H.deadhead).filter((n) => n >= 0);
   const cards = [
-    ["Total Dispatches", fmtNum(total), "Recovery/response events"],
-    ["Completion Rate", fmtPct((completed / total) * 100), `${fmtNum(completed)} completed of ${fmtNum(total)}`],
-    ["Avg Turnaround", fmtMin(mean(turn)), `median ${median(turn).toFixed(1)} min`],
-    ["Avg Response Time", fmtMin(mean(posNums(H.mDispatchArrive))), "Dispatch → on scene"],
-    ["Avg On-Scene", fmtMin(mean(posNums(H.mOnScene))), "Time working the scene"],
+    ["Total Dispatches", fmtNum(total), "Fleet-response events"],
+    ["Completion Rate", fmtPct((completed / total) * 100), `${fmtNum(completed)} completed · ${fmtNum(total - completed)} cancelled`],
+    ["Median Turnaround", fmtMin(median(turn)), `${turn.length} timed events`],
+    ["Median Response", fmtMin(median(posNums(H.mDispatchArrive))), "Dispatch → on scene"],
+    ["Median On-Scene", fmtMin(median(posNums(H.mOnScene))), "Time working the scene"],
     ["L0 False-Positive Rate", fmtPct(tp + fp ? (fp / (tp + fp)) * 100 : 0), `${fmtNum(fp)} FP of ${fmtNum(tp + fp)} L0s`],
-    ["Bot Damage Rate", fmtPct(rate(H.botDmg, true)), "Dispatches with bot damage"],
-    ["Vehicles Towed", fmtNum(towed), fmtPct((towed / total) * 100) + " of dispatches"],
-    ["Riders Onboard", fmtNum(ridersOnboard), "Dispatches with riders in VH6"],
-    ["Unique VH6 Units", fmtNum(new Set(cleaned(H.vh6)).size), "Distinct vehicles serviced"],
+    ["Riders Onboard", fmtPct(ridersPct), "Dispatches with riders in the VH6"],
+    ["Avg Deadhead", fmtPct(mean(deadhead) * 100), "Non-productive travel share"],
   ];
   return `<div class="grid kpi-grid">${cards.map((c, i) => kpi(c[0], c[1], c[2], i)).join("")}</div>`;
 }
+function card(title, sub, body, cls) { return `<div class="card ${cls || ""}"><h3 class="card-title">${esc(title)}</h3>${sub ? `<div class="card-sub">${esc(sub)}</div>` : ""}${body}</div>`; }
 
+/* ---------------- pages ---------------- */
 function renderOverview() {
-  let charts = "";
-  charts += card("Dispatches Over Time", "Monthly volume by Date Created", areaChart(monthly(H.date), color(0)));
-  charts += card("By Dispatch Type", "All dispatch categories", barH(counts(H.type, 12)));
-  charts += card("Status", "Completed vs cancelled", donut(counts(H.status), "dispatches"));
-  charts += card("By Location", "Where recoveries happen", barH(counts(H.location, 8)));
-  return buildKpis() + `<div class="grid chart-grid" style="margin-top:16px">${charts}</div>`;
+  let c = "";
+  c += card("Dispatch Volume Over Time", "Monthly fleet-response events", lineChart(monthly(H.date), "count", color(0)), "span-2");
+  c += card("By Dispatch Type", "What triggered the response", barH(counts(H.type, 10)));
+  c += card("Status", "Completed vs cancelled", donut(counts(H.status), "dispatches"));
+  return buildKpis() + `<div class="grid chart-grid" style="margin-top:16px">${c}</div>`;
 }
-function renderResponse() {
+function renderPerformance() {
   const stages = [
-    { label: "Created → Accepted", val: mean(posNums(H.mCreatedAccept)) },
-    { label: "Accepted → On Scene", val: mean(posNums(H.mAcceptArrive)) },
-    { label: "On-Scene Work", val: mean(posNums(H.mOnScene)) },
-    { label: "Return to Base", val: mean(posNums(H.mReturn)) },
+    { label: "Created → Accepted", val: median(posNums(H.mCreatedAccept)) },
+    { label: "Accepted → On Scene", val: median(posNums(H.mAcceptArrive)) },
+    { label: "On-Scene Work", val: median(posNums(H.mOnScene)) },
+    { label: "Return to Base", val: median(posNums(H.mReturn)) },
   ];
-  const turn = posNums(H.mTurnaround);
-  const cap = percentile(turn, 95) || 1;
-  const capped = turn.filter((n) => n <= cap);
-  const bc = 12, min = 0, max = cap, w = (max - min) / bc;
-  const bins = Array.from({ length: bc }, (_, i) => ({ from: i * w, to: (i + 1) * w, count: 0, label: `${Math.round(i * w)}–${Math.round((i + 1) * w)}` }));
-  capped.forEach((n) => { let idx = Math.floor(n / w); if (idx >= bc) idx = bc - 1; if (idx < 0) idx = 0; bins[idx].count++; });
-  let out = "";
-  out += card("Recovery Lifecycle", "Average minutes per stage (completed dispatches with valid timestamps)", stagesBar(stages), "span-2");
-  out += card("Turnaround Distribution", `Minutes, capped at 95th pct (${Math.round(cap)} min)`, barV(bins, color(2)));
-  out += card("Avg Turnaround by Location", "Slowest locations first", barH(avgByCategory(H.location, H.mTurnaround, 8), (it) => `${it.val.toFixed(0)}m · n=${it.count}`));
-  out += card("Avg Turnaround by Dispatch Type", "Slowest types first", barH(avgByCategory(H.type, H.mTurnaround, 10), (it) => `${it.val.toFixed(0)}m · n=${it.count}`));
-  out += card("Avg Response by Dispatch Type", "Dispatch → on scene", barH(avgByCategory(H.type, H.mDispatchArrive, 10), (it) => `${it.val.toFixed(0)}m · n=${it.count}`));
-  return `<div class="grid chart-grid">${out}</div>`;
+  const hist = histogram(posNums(H.mTurnaround), 95, color(2));
+  const trend = monthly(H.date, (rs) => { const v = rs.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0); return v.length ? median(v) : 0; });
+  let c = "";
+  c += card("Response Lifecycle", "Median minutes per stage (timed dispatches)", stagesBar(stages), "span-2");
+  c += card("Median Turnaround Trend", "Monthly median turnaround (min)", lineChart(trend, "val", color(1), (v) => `${Math.round(v)}m`));
+  c += card("Turnaround Distribution", `Minutes, capped at 95th pct (${Math.round(hist.cap)} min)`, hist.svg);
+  c += card("Median Turnaround by Location", "Slowest markets first", barH(avgByCategory(H.location, H.mTurnaround, 8), (it) => `${it.val.toFixed(0)}m · n=${it.count}`));
+  c += card("Median Turnaround by Dispatch Type", "Slowest types first", barH(avgByCategory(H.type, H.mTurnaround, 10), (it) => `${it.val.toFixed(0)}m · n=${it.count}`));
+  return `<div class="grid chart-grid">${c}</div>`;
 }
-function renderDispatch() {
+function renderPatterns() {
+  let c = "";
+  c += card("Dispatches by Day of Week", "When demand peaks", barV(dayOfWeek(), color(0)));
+  c += card("Dispatches by Hour of Day", "24-hour demand curve", barV(hourOfDay(), color(4), true));
+  c += card("Dispatches by Location", "Where events happen", barH(counts(H.location, 8)));
+  c += card("Dispatches by Autonomy Milestone", "ZR milestone at time of event", barH(counts(H.milestone, 8)));
+  return `<div class="grid chart-grid">${c}</div>`;
+}
+function renderEvents() {
   const l0 = counts(H.l0).filter((x) => /positive/i.test(x.label));
-  let out = "";
-  out += card("Reason for Event", "Why the VH6 needed response", barH(counts(H.reason, 14)));
-  out += card("Recovery Action Taken", "How each event was resolved", barH(counts(H.action, 12)));
-  out += card("ZR Milestone", "Autonomy milestone at time of event", donut(counts(H.milestone), "dispatches"));
-  out += card("L0 True vs False Positive", "L0 alert accuracy", donut(l0, "L0 alerts"));
-  out += card("By Assignee (FR Crew)", "Dispatches handled per crew ID", barH(counts(H.assignee, 12)));
-  out += card("By Supervisor", "Dispatches by supervising lead", barH(counts(H.supervisor, 12)));
-  return `<div class="grid chart-grid">${out}</div>`;
+  let c = "";
+  c += card("Reason for Event", "Why the VH6 needed response", barH(counts(H.reason, 14)), "span-2");
+  c += card("L0 Alert Accuracy", "True vs false positive L0s", donut(l0, "L0 alerts"));
+  c += card("Resolution / Action Taken", "How the event was cleared", barH(counts(H.action, 12)));
+  c += card("Dispatches by Crew", "Handled per FR crew ID", barH(counts(H.assignee, 12)));
+  return `<div class="grid chart-grid">${c}</div>`;
 }
-function renderFleet() {
-  const ridersRec = counts(H.ridersRec).filter((x) => !/^false$/i.test(x.label));
-  let out = "";
-  out += card("Top VH6 Units by Dispatches", "Most-serviced vehicles", barH(counts(H.vh6, 12)));
-  out += card("Bot Damage", "Was the bot damaged?", donut(counts(H.botDmg).filter((x) => /true|false/i.test(x.label)), "dispatches"));
-  out += card("Rider Recovery Outcomes", "How riders were handled (excl. none)", ridersRec.length ? barH(ridersRec) : `<div class="empty-hint">No rider recoveries.</div>`);
-  out += card("Flatbed Usage", "Internal vs external tow assets", donut(counts(H.flatbed), "tows"));
-  out += card("3rd-Party Rider Shuttle", "Shuttle used?", donut(counts(H.shuttle).filter((x) => /true|false/i.test(x.label)), "dispatches"));
-  out += card("Training Dispatches", "Training vs live", donut(counts(H.training).filter((x) => /true|false/i.test(x.label)), "dispatches"));
-  return `<div class="grid chart-grid">${out}</div>`;
-}
-const EXPLORER_COLS = [H.date, H.vh6, H.status, H.type, H.reason, H.location, H.assignee, H.action, H.mTurnaround, H.botDmg, H.ridersIn];
-const EXPLORER_LABELS = { [H.vh6]: "VH6", [H.action]: "Action", [H.mTurnaround]: "Turnaround (min)", [H.botDmg]: "Bot Damaged", [H.ridersIn]: "Riders" };
+const EXPLORER_COLS = [H.date, H.vh6, H.status, H.type, H.reason, H.location, H.assignee, H.action, H.mDispatchArrive, H.mTurnaround, H.ridersIn];
+const EXPLORER_LABELS = { [H.vh6]: "VH6", [H.action]: "Resolution", [H.mDispatchArrive]: "Response (min)", [H.mTurnaround]: "Turnaround (min)", [H.ridersIn]: "Riders" };
 function renderExplorer() {
   const rows = STATE.records.slice(0, 150);
   const th = EXPLORER_COLS.map((h) => `<th>${esc(EXPLORER_LABELS[h] || h)}</th>`).join("");
   const tr = rows.map((r) => `<tr>${EXPLORER_COLS.map((h) => `<td>${esc(r[h] ?? "")}</td>`).join("")}</tr>`).join("");
-  return card("Dispatch Explorer", `Showing ${rows.length} of ${fmtNum(STATE.records.length)} dispatches · key fields (full dataset has ${STATE.headers.length} columns)`, `<div class="table-wrap"><table class="data"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
+  return card("Dispatch Explorer", `Showing ${rows.length} of ${fmtNum(STATE.records.length)} dispatches · key fields (${STATE.headers.length} total columns)`, `<div class="table-wrap"><table class="data"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
 }
 function inferType(name, values) {
   if (!values.length) return "text";
@@ -288,8 +283,7 @@ function inferType(name, values) {
 }
 function renderQuality() {
   const rowsH = STATE.headers.map((h) => {
-    const all = col(h).map((v) => (v ?? "").trim());
-    const filled = all.filter((v) => v !== "");
+    const all = col(h).map((v) => (v ?? "").trim()), filled = all.filter((v) => v !== "");
     const real = filled.filter((v) => !EMPTY.has(v.toLowerCase()));
     const type = inferType(h, real.slice(0, 400));
     const comp = all.length ? Math.round((filled.length / all.length) * 100) : 0;
@@ -305,9 +299,9 @@ function renderQuality() {
 /* ---------------- shell ---------------- */
 const PAGES = [
   { id: "overview", label: "Overview", icon: "◎", fn: renderOverview },
-  { id: "response", label: "Response Times", icon: "⏱", fn: renderResponse },
-  { id: "dispatch", label: "Dispatch Analysis", icon: "🧭", fn: renderDispatch },
-  { id: "fleet", label: "Fleet & Safety", icon: "🛡", fn: renderFleet },
+  { id: "performance", label: "Response Performance", icon: "⏱", fn: renderPerformance },
+  { id: "patterns", label: "Demand Patterns", icon: "📊", fn: renderPatterns },
+  { id: "events", label: "Event Analysis", icon: "🧭", fn: renderEvents },
   { id: "explorer", label: "Dispatch Explorer", icon: "🔎", fn: renderExplorer },
   { id: "quality", label: "Data Quality", icon: "✓", fn: renderQuality },
 ];
@@ -324,7 +318,7 @@ function boot(text) {
   STATE.headers = headers; STATE.records = rows;
   const req = new URLSearchParams(location.search).get("page");
   if (req && PAGES.some((p) => p.id === req)) STATE.page = req;
-  document.getElementById("subtitle").textContent = `${fmtNum(rows.length)} dispatches · ${headers.length} fields · Fleet Response recovery operations`;
+  document.getElementById("subtitle").textContent = `${fmtNum(rows.length)} dispatches · ${headers.length} fields · autonomous fleet-response operations`;
   renderNav(); renderContent();
   window.__READY__ = true;
 }
