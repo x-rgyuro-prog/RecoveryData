@@ -404,7 +404,29 @@ const PAGES = [
   { id: "explorer", label: "Dispatch Explorer", icon: "🔎", fn: renderExplorer },
   { id: "quality", label: "Data Quality", icon: "✓", fn: renderQuality },
 ];
-let STATE = { headers: [], records: [], page: "overview", widgets: {} };
+let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", maxDate: null };
+
+const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["30d", "Last 30 days"]];
+function applyRange() {
+  if (STATE.range === "all" || !STATE.maxDate) { STATE.records = STATE.allRecords; return; }
+  const days = STATE.range === "30d" ? 30 : 365;
+  const cutoff = STATE.maxDate.getTime() - days * 86400000;
+  STATE.records = STATE.allRecords.filter((r) => { const d = parseDate(r[H.date]); return d && d.getTime() >= cutoff; });
+}
+function renderRange() {
+  const el = document.getElementById("rangeControls");
+  if (el) el.innerHTML = `<div class="btn-group">${RANGES.map(([id, l]) => `<button class="toggle ${STATE.range === id ? "active" : ""}" data-range="${id}">${l}</button>`).join("")}</div>`;
+}
+function updateSubtitle() {
+  const label = STATE.range === "all" ? "all time" : STATE.range === "12m" ? "last 12 months" : "last 30 days";
+  const extra = STATE.range === "all" ? "" : ` of ${fmtNum(STATE.allRecords.length)}`;
+  document.getElementById("subtitle").textContent = `${fmtNum(STATE.records.length)}${extra} dispatches · ${label} · autonomous fleet-response operations`;
+}
+function onRange(e) {
+  const b = e.target.closest("[data-range]"); if (!b) return;
+  STATE.range = b.dataset.range;
+  applyRange(); renderRange(); updateSubtitle(); renderContent();
+}
 
 function renderNav() {
   document.getElementById("nav").innerHTML = PAGES.map((p) => `<div class="nav-link ${p.id === STATE.page ? "active" : ""}" data-page="${p.id}"><span class="nav-icon">${p.icon}</span>${p.label}</div>`).join("");
@@ -414,12 +436,16 @@ function renderContent() { document.getElementById("content").innerHTML = (PAGES
 
 function boot(text) {
   const { headers, rows } = parseCSV(text);
-  STATE.headers = headers; STATE.records = rows;
-  const req = new URLSearchParams(location.search).get("page");
-  if (req && PAGES.some((p) => p.id === req)) STATE.page = req;
-  document.getElementById("subtitle").textContent = `${fmtNum(rows.length)} dispatches · ${headers.length} fields · autonomous fleet-response operations`;
+  STATE.headers = headers; STATE.allRecords = rows;
+  let mx = null; rows.forEach((r) => { const d = parseDate(r[H.date]); if (d && (!mx || d > mx)) mx = d; });
+  STATE.maxDate = mx;
+  const params = new URLSearchParams(location.search);
+  const req = params.get("page"); if (req && PAGES.some((p) => p.id === req)) STATE.page = req;
+  const rng = params.get("range"); if (rng && RANGES.some((r) => r[0] === rng)) STATE.range = rng;
+  applyRange();
   document.addEventListener("click", onToggle);
-  renderNav(); renderContent();
+  document.addEventListener("click", onRange);
+  renderRange(); updateSubtitle(); renderNav(); renderContent();
   window.__READY__ = true;
 }
 async function init() {
