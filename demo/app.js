@@ -91,13 +91,13 @@ function series(dateKey, mode, valueFn) {
   STATE.records.forEach((r) => {
     const d = parseDate(r[dateKey]); if (!d) return;
     let key, label;
-    if (mode === "week") { const w = isoWeek(d); key = `${w.year}-W${String(w.week).padStart(2, "0")}`; label = `W${String(w.week).padStart(2, "0")}`; }
+    if (mode === "week") { const w = isoWeek(d); key = `${w.year}-W${String(w.week).padStart(2, "0")}`; label = w.date.toLocaleDateString("en-US", { month: "short", year: "2-digit" }); }
     else { key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; label = fmtPeriod(key); }
     const g = m.get(key) || { rows: [], label }; g.rows.push(r); m.set(key, g);
   });
   return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([period, g]) => ({ period, label: g.label, count: g.rows.length, val: valueFn ? valueFn(g.rows) : g.rows.length }));
 }
-function isoWeek(d) { const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const dn = (date.getUTCDay() + 6) % 7; date.setUTCDate(date.getUTCDate() - dn + 3); const ft = new Date(Date.UTC(date.getUTCFullYear(), 0, 4)); const week = 1 + Math.round(((date - ft) / 86400000 - 3 + ((ft.getUTCDay() + 6) % 7)) / 7); return { year: date.getUTCFullYear(), week }; }
+function isoWeek(d) { const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const dn = (date.getUTCDay() + 6) % 7; date.setUTCDate(date.getUTCDate() - dn + 3); const ft = new Date(Date.UTC(date.getUTCFullYear(), 0, 4)); const week = 1 + Math.round(((date - ft) / 86400000 - 3 + ((ft.getUTCDay() + 6) % 7)) / 7); return { year: date.getUTCFullYear(), week, date }; }
 
 const DOW = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 function dayOfWeek() { const m = new Map(); cleaned(H.day).forEach((v) => m.set(v, (m.get(v) || 0) + 1)); return DOW.filter((d) => m.has(d)).map((d) => ({ label: d.slice(0, 3), count: m.get(d) })); }
@@ -159,13 +159,17 @@ function barV(bins, colr, rotate) {
   const W = 560, Ht = 260, pad = { l: 40, r: 12, t: 14, b: showRotated ? 52 : 34 };
   const max = Math.max(...bins.map((b) => b.count), 1), iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b, bw = iw / bins.length;
   const gap = Math.min(6, bw * 0.3), barW = Math.max(bw - gap, 1), radius = barW > 4 ? 4 : 1;
-  const step = dense ? Math.ceil(bins.length / 12) : 1;
+  // Decide which bars get an x-axis label. For dense series (e.g. weekly) show a
+  // label only when it changes (e.g. once per month) with a minimum spacing.
+  const labelIdx = new Set();
+  if (dense) { let last = null, lastX = -1e9; for (let i = 0; i < bins.length; i++) { const cx = pad.l + i * bw + bw / 2; if (bins[i].label !== last && cx - lastX >= 34) { labelIdx.add(i); last = bins[i].label; lastX = cx; } } }
+  else { for (let i = 0; i < bins.length; i++) labelIdx.add(i); }
   let g = "";
   for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="11" text-anchor="end">${fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
   const bars = bins.map((b, i) => {
     const h = (b.count / max) * ih, bx = pad.l + i * bw + (bw - barW) / 2, by = pad.t + ih - h, cx = bx + barW / 2;
     let lbl = "";
-    if (i % step === 0) lbl = showRotated
+    if (labelIdx.has(i)) lbl = showRotated
       ? `<text x="${cx.toFixed(1)}" y="${Ht - 36}" fill="#9aa7c2" font-size="9" text-anchor="end" transform="rotate(-35 ${cx.toFixed(1)} ${Ht - 36})">${esc(b.label)}</text>`
       : `<text x="${cx.toFixed(1)}" y="${Ht - 16}" fill="#9aa7c2" font-size="10" text-anchor="middle">${esc(b.label)}</text>`;
     return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 0).toFixed(1)}" rx="${radius}" fill="${bins.length <= 8 ? color(i) : colr}"/>${lbl}`;
