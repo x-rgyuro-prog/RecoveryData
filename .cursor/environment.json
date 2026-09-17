@@ -1,11 +1,11 @@
 {
-  "name": "RecoveryData Dashboard",
-  "install": "npm install && npm run build",
+  "name": "Fleet Response Upload Dashboard",
+  "install": "echo 'Static site — no dependencies to install.'",
   "terminals": [
     {
-      "name": "app",
-      "command": "npm run dev"
+      "name": "demo",
+      "command": "python3 demo/serve.py 5173"
     }
   ],
-  "ports": [5173, 3001]
+  "ports": [5173]
 }
