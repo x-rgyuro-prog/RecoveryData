@@ -39,15 +39,16 @@ python3 demo/build_standalone.py demo/data.js demo/standalone.html
 # host or double-click demo/standalone.html
 ```
 
-### GitHub Pages (one-time setup)
+### GitHub Pages
 
-A workflow at `.github/workflows/deploy-pages.yml` publishes `demo/` automatically.
+A workflow at `.github/workflows/deploy-pages.yml` publishes `demo/`
+automatically. It **auto-enables Pages** (`configure-pages` with
+`enablement: true`), so no manual Settings toggle is required.
 
-1. Merge this to `main`.
-2. Repo **Settings → Pages → Build and deployment → Source: “GitHub Actions.”**
-3. The workflow runs on every push to `main` (or trigger it manually under the
-   **Actions** tab). The live URL appears in the workflow run and on the Pages
-   settings page — typically `https://<owner>.github.io/RecoveryData/`.
+- Merge to `main` → the workflow runs, enables Pages (GitHub Actions source),
+  and deploys. The live URL prints in the workflow run and on the Pages settings
+  page — typically `https://<owner>.github.io/RecoveryData/`.
+- Re-deploys on every push to `main`; can also be run from the **Actions** tab.
 
 Note: Pages on a **private** repo requires a paid plan; a public repo works on
 the free tier (only the empty app is published — never any data).
