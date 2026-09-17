@@ -132,6 +132,12 @@ def main():
             time.sleep(0.15)
         time.sleep(0.4)  # allow final paint
 
+        # Optional: run a JS snippet (e.g. click toggle buttons) before capture.
+        pre = os.environ.get("CDP_EVAL")
+        if pre:
+            cmd(s, "Runtime.evaluate", {"expression": pre, "returnByValue": True})
+            time.sleep(0.4)
+
         metrics = cmd(s, "Page.getLayoutMetrics")
         css = metrics.get("result", {}).get("cssContentSize") or metrics.get("result", {}).get("contentSize")
         height = int(css["height"]) + 2
