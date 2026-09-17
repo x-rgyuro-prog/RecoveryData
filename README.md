@@ -70,26 +70,38 @@ npm start          # serves API + built client on PORT (default 3001)
 | `GET /api/data?gid=` | Live fetch + full computed insights and column profile. |
 | `GET /api/rows?gid=` | Live fetch of raw rows for the Data Explorer. |
 
-## Offline demo (`demo/`)
+## Upload app (`demo/`)
 
-A dependency-free static build of the dashboard (vanilla JS + hand-rolled SVG
-charts) that runs with no npm and no network — handy for previewing against a
-downloaded copy of the sheet. The dashboard in `demo/` is tailored to the Fleet
-Response recovery dataset.
+A dependency-free static web app (vanilla JS + hand-rolled SVG charts) tailored to
+the Fleet Response dataset. It runs with **no npm, no backend, and no network** —
+safe to host on the open internet.
 
-Real data payloads (`demo/data.csv`, `demo/data.js`, `demo/standalone.html`) are
-git-ignored so operational data never lands in the repo. To populate it:
+**How it works:** the app boots to an upload screen and stays empty until a user
+drops/chooses a **CSV**. The file is parsed **entirely in the browser** — it is
+never uploaded to a server or stored anywhere, and nothing is remembered between
+sessions (upload every time). This keeps operational data off the internet even
+when the app itself is publicly hosted.
+
+Run it locally:
 
 ```bash
-# From a downloaded CSV of the sheet:
-python3 demo/embed_data.py path/to/your.csv demo/data.js
-python3 demo/build_standalone.py demo/data.js demo/standalone.html   # single-file build
-# then open demo/standalone.html, or serve the folder:
 python3 -m http.server 5173 --directory demo
-
-# Or generate a safe synthetic sample instead:
-python3 demo/make_sample.py demo/data.csv
+# open http://localhost:5173  -> drop a CSV to view the dashboard
 ```
+
+Single-file build (one self-contained HTML you can host or double-click):
+
+```bash
+python3 demo/build_standalone.py demo/data.js demo/standalone.html
+```
+
+Deploy: copy `demo/index.html`, `demo/app.js`, `demo/styles.css` to any static
+host (S3/CloudFront, Netlify, Vercel, GitHub Pages, or an internal server), or
+just serve the single `standalone.html`.
+
+Dev helpers (optional): `?csv=<relative-path>` preloads a same-origin CSV for
+demos; `demo/embed_data.py`/`demo/make_sample.py` create fixtures. Any real data
+files (`demo/data.csv`, `demo/data.js`, `demo/standalone.html`) are git-ignored.
 
 ## Pages
 

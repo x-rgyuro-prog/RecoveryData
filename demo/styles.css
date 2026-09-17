@@ -122,3 +122,17 @@ svg text { font-family: inherit; }
 .date-input:focus { outline: none; border-color: var(--accent); }
 .geo-select { background: var(--bg-elev-2); color: var(--text); border: 1px solid var(--border); padding: 7px 12px; border-radius: 9px; font-size: 12px; font-weight: 600; cursor: pointer; color-scheme: dark; }
 .geo-select:focus { outline: none; border-color: var(--accent); }
+
+/* upload landing */
+.upload-wrap { display: grid; place-items: center; min-height: 64vh; }
+.dropzone { width: min(560px, 92%); text-align: center; padding: 54px 34px; border: 2px dashed var(--border); border-radius: 18px; background: linear-gradient(180deg, var(--bg-elev) 0%, #101830 100%); transition: border-color 0.15s, background 0.15s; }
+.dropzone.drag { border-color: var(--accent); background: rgba(79, 140, 255, 0.08); }
+.dz-icon { width: 58px; height: 58px; margin: 0 auto 16px; border-radius: 14px; display: grid; place-items: center; font-size: 26px; color: #06111f; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+.dz-title { font-size: 20px; font-weight: 700; }
+.dz-sub { color: var(--text-faint); margin: 10px 0; font-size: 13px; }
+.btn-primary-lg { background: linear-gradient(135deg, var(--accent), #3b74e0); color: #fff; border: none; padding: 12px 22px; border-radius: 11px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.btn-primary-lg:hover { filter: brightness(1.06); }
+.dz-note { color: var(--text-faint); font-size: 12px; margin-top: 20px; line-height: 1.6; }
+.dz-error { color: var(--danger); font-size: 13px; margin-top: 16px; }
+#newFileBtn { background: var(--bg-elev-2); color: var(--text); border: 1px solid var(--border); padding: 7px 12px; border-radius: 9px; font-size: 12px; font-weight: 600; cursor: pointer; }
+#newFileBtn:hover { border-color: var(--accent); }

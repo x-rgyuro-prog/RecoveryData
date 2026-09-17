@@ -480,7 +480,7 @@ const PAGES = [
   { id: "explorer", label: "Dispatch Explorer", icon: "🔎", fn: renderExplorer },
   { id: "quality", label: "Data Quality", icon: "✓", fn: renderQuality },
 ];
-let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null };
+let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null, loaded: false };
 
 const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["30d", "Last 30 days"], ["custom", "Custom"]];
 const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -548,32 +548,84 @@ function renderNav() {
   document.getElementById("nav").innerHTML = PAGES.map((p) => `<div class="nav-link ${p.id === STATE.page ? "active" : ""}" data-page="${p.id}"><span class="nav-icon">${p.icon}</span>${p.label}</div>`).join("");
   document.querySelectorAll(".nav-link").forEach((el) => el.addEventListener("click", () => { STATE.page = el.dataset.page; renderNav(); renderContent(); }));
 }
-function renderContent() { document.getElementById("content").innerHTML = (PAGES.find((p) => p.id === STATE.page) || PAGES[0]).fn(); }
+function renderContent() { if (!STATE.loaded) { showUpload(); return; } document.getElementById("content").innerHTML = (PAGES.find((p) => p.id === STATE.page) || PAGES[0]).fn(); }
+function renderFileControls() { const el = document.getElementById("fileControls"); if (el) el.innerHTML = STATE.loaded ? `<button id="newFileBtn" title="Load a different CSV">↺ New CSV</button>` : ""; }
+
+/* ---------------- upload flow ---------------- */
+function showUpload(err) {
+  STATE.loaded = false;
+  ["rangeControls", "geoControls", "fileControls"].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ""; });
+  const sub = document.getElementById("subtitle"); if (sub) sub.textContent = "Upload a CSV to begin — your file stays in your browser";
+  document.getElementById("nav").innerHTML = "";
+  document.getElementById("content").innerHTML = `
+    <div class="upload-wrap"><div class="dropzone" id="dropzone">
+      <div class="dz-icon">⬆</div>
+      <div class="dz-title">Drop your CSV here</div>
+      <div class="dz-sub">or</div>
+      <button class="btn-primary-lg" id="pickBtn">Choose CSV file</button>
+      <div class="dz-note">Everything is processed locally in your browser.<br/>Your file is never uploaded to a server or stored anywhere.</div>
+      ${err ? `<div class="dz-error">${esc(err)}</div>` : ""}
+    </div></div>`;
+  const dz = document.getElementById("dropzone");
+  document.getElementById("pickBtn").addEventListener("click", () => document.getElementById("fileInput").click());
+  ["dragenter", "dragover"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); if (ev !== "drop") dz.classList.remove("drag"); }));
+  dz.addEventListener("drop", (e) => { dz.classList.remove("drag"); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) readFile(f); });
+}
+function readFile(file) {
+  if (!file) return;
+  if (!/\.csv$/i.test(file.name) && !/csv|text\/plain/.test(file.type || "")) { showUpload("Please choose a .csv file."); return; }
+  const reader = new FileReader();
+  reader.onload = () => { try { boot(String(reader.result)); } catch (err) { showUpload("Could not read that file: " + err.message); } };
+  reader.onerror = () => showUpload("Failed to read the file.");
+  reader.readAsText(file);
+}
 
 function boot(text) {
-  const { headers, rows } = parseCSV(text);
-  STATE.headers = headers; STATE.allRecords = rows;
-  let mx = null, mn = null; rows.forEach((r) => { const d = parseDate(r[H.date]); if (d) { if (!mx || d > mx) mx = d; if (!mn || d < mn) mn = d; } });
+  const parsed = parseCSV(text);
+  let headers = parsed.headers, rows = parsed.rows;
+  // Keep real dispatch rows (FR schema) and drop entirely-empty columns.
+  const keyRows = rows.filter((r) => clean(r[H.date]) || clean(r[H.vh6]) || clean(r[H.status]));
+  const recs = keyRows.length ? keyRows : rows;
+  headers = headers.filter((h) => recs.some((r) => (r[h] || "").trim() !== ""));
+  if (!headers.length || !recs.length) { showUpload("That file has no readable rows."); return; }
+
+  STATE.headers = headers; STATE.allRecords = recs; STATE.loaded = true;
+  STATE.range = "all"; STATE.location = "all"; STATE.page = "overview";
+  let mx = null, mn = null; recs.forEach((r) => { const d = parseDate(r[H.date]); if (d) { if (!mx || d > mx) mx = d; if (!mn || d < mn) mn = d; } });
   STATE.maxDate = mx; STATE.minDate = mn;
   STATE.customMin = mn ? toISO(mn) : ""; STATE.customMax = mx ? toISO(mx) : "";
   STATE.customFrom = STATE.customMin; STATE.customTo = STATE.customMax;
-  const params = new URLSearchParams(location.search);
-  const req = params.get("page"); if (req && PAGES.some((p) => p.id === req)) STATE.page = req;
-  const rng = params.get("range"); if (rng && RANGES.some((r) => r[0] === rng)) STATE.range = rng;
-  if (params.get("from")) STATE.customFrom = params.get("from");
-  if (params.get("to")) STATE.customTo = params.get("to");
-  const geo = params.get("geo"); if (geo) STATE.location = geo.toLowerCase();
   applyFilters();
+  renderRange(); renderGeo(); renderFileControls(); updateSubtitle(); renderNav(); renderContent();
+  window.__READY__ = true;
+}
+async function init() {
   document.addEventListener("click", onToggle);
   document.addEventListener("click", onRange);
   document.addEventListener("change", onRangeInput);
   document.addEventListener("change", onGeo);
-  renderRange(); renderGeo(); updateSubtitle(); renderNav(); renderContent();
+  document.getElementById("fileInput").addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (f) readFile(f); e.target.value = ""; });
+  document.addEventListener("click", (e) => { if (e.target.id === "newFileBtn") showUpload(); });
+
+  // Embedded data (single-file preview build) auto-loads; otherwise a same-origin
+  // ?csv= relative path can preload for demos; the deployed app starts empty.
+  const params = new URLSearchParams(location.search);
+  const csv = params.get("csv");
+  if (typeof window.__CSV__ === "string" && window.__CSV__.length) { boot(window.__CSV__); applyUrlState(params); return; }
+  if (csv && !csv.includes("://") && !csv.startsWith("//") && !csv.startsWith("/")) {
+    try { const res = await fetch(csv, { cache: "no-store" }); if (res.ok) { boot(await res.text()); applyUrlState(params); return; } } catch (e) { /* fall through to upload */ }
+  }
+  showUpload();
   window.__READY__ = true;
 }
-async function init() {
-  if (typeof window.__CSV__ === "string") { boot(window.__CSV__); return; }
-  try { const res = await fetch("./data.csv", { cache: "no-store" }); if (!res.ok) throw new Error(`data.csv HTTP ${res.status}`); boot(await res.text()); }
-  catch (e) { document.getElementById("content").innerHTML = `<div class="card"><h3 class="card-title" style="color:#ff6b8b">Could not load data</h3><div class="muted">${esc(e.message)}</div></div>`; window.__READY__ = true; }
+function applyUrlState(params) {
+  if (!STATE.loaded) return;
+  const pg = params.get("page"); if (pg && PAGES.some((p) => p.id === pg)) STATE.page = pg;
+  const rng = params.get("range"); if (rng && RANGES.some((r) => r[0] === rng)) STATE.range = rng;
+  if (params.get("from")) STATE.customFrom = params.get("from");
+  if (params.get("to")) STATE.customTo = params.get("to");
+  const geo = params.get("geo"); if (geo) STATE.location = geo.toLowerCase();
+  applyFilters(); renderRange(); renderGeo(); updateSubtitle(); renderNav(); renderContent();
 }
 init();
