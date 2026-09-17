@@ -480,22 +480,40 @@ const PAGES = [
   { id: "explorer", label: "Dispatch Explorer", icon: "🔎", fn: renderExplorer },
   { id: "quality", label: "Data Quality", icon: "✓", fn: renderQuality },
 ];
-let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", maxDate: null };
+let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null };
 
 const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["30d", "Last 30 days"], ["custom", "Custom"]];
 const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-function applyRange() {
+function inDateRange(r) {
   if (STATE.range === "custom") {
     const from = STATE.customFrom ? new Date(STATE.customFrom + "T00:00:00") : null;
     const to = STATE.customTo ? new Date(STATE.customTo + "T23:59:59") : null;
-    STATE.records = STATE.allRecords.filter((r) => { const d = parseDate(r[H.date]); if (!d) return false; if (from && d < from) return false; if (to && d > to) return false; return true; });
-    return;
+    const d = parseDate(r[H.date]); if (!d) return false;
+    if (from && d < from) return false; if (to && d > to) return false; return true;
   }
-  if (STATE.range === "all" || !STATE.maxDate) { STATE.records = STATE.allRecords; return; }
+  if (STATE.range === "all" || !STATE.maxDate) return true;
   const days = STATE.range === "30d" ? 30 : 365;
-  const cutoff = STATE.maxDate.getTime() - days * 86400000;
-  STATE.records = STATE.allRecords.filter((r) => { const d = parseDate(r[H.date]); return d && d.getTime() >= cutoff; });
+  const d = parseDate(r[H.date]);
+  return d && d.getTime() >= STATE.maxDate.getTime() - days * 86400000;
 }
+function applyFilters() {
+  STATE.records = STATE.allRecords.filter((r) => {
+    if (!inDateRange(r)) return false;
+    if (STATE.location && STATE.location !== "all" && clean(r[H.location]).toLowerCase() !== STATE.location) return false;
+    return true;
+  });
+}
+function locationOptions() {
+  const m = new Map();
+  STATE.allRecords.forEach((r) => { const v = clean(r[H.location]); if (!v) return; const k = v.toLowerCase(); const e = m.get(k) || { label: v, count: 0 }; e.count++; m.set(k, e); });
+  return [...m.values()].sort((a, b) => b.count - a.count);
+}
+function renderGeo() {
+  const el = document.getElementById("geoControls"); if (!el) return;
+  const opts = locationOptions();
+  el.innerHTML = `<select class="geo-select" id="geoSelect"><option value="all"${STATE.location === "all" ? " selected" : ""}>All locations</option>${opts.map((o) => `<option value="${esc(o.label.toLowerCase())}"${STATE.location === o.label.toLowerCase() ? " selected" : ""}>${esc(o.label)} (${fmtNum(o.count)})</option>`).join("")}</select>`;
+}
+function onGeo(e) { if (e.target.id !== "geoSelect") return; STATE.location = e.target.value; applyFilters(); updateSubtitle(); renderContent(); }
 function renderRange() {
   const el = document.getElementById("rangeControls");
   if (!el) return;
@@ -510,17 +528,20 @@ function onRangeInput(e) {
   const from = document.getElementById("rangeFrom"), to = document.getElementById("rangeTo");
   if (from) STATE.customFrom = from.value;
   if (to) STATE.customTo = to.value;
-  applyRange(); updateSubtitle(); renderContent();
+  applyFilters(); updateSubtitle(); renderContent();
 }
 function updateSubtitle() {
   const label = STATE.range === "all" ? "all time" : STATE.range === "12m" ? "last 12 months" : STATE.range === "30d" ? "last 30 days" : `${STATE.customFrom || "…"} → ${STATE.customTo || "…"}`;
-  const extra = STATE.range === "all" ? "" : ` of ${fmtNum(STATE.allRecords.length)}`;
-  document.getElementById("subtitle").textContent = `${fmtNum(STATE.records.length)}${extra} dispatches · ${label} · autonomous fleet-response operations`;
+  const filtered = STATE.range !== "all" || STATE.location !== "all";
+  const extra = filtered ? ` of ${fmtNum(STATE.allRecords.length)}` : "";
+  const geo = STATE.location !== "all" ? ` · ${locationLabel()}` : "";
+  document.getElementById("subtitle").textContent = `${fmtNum(STATE.records.length)}${extra} dispatches · ${label}${geo} · autonomous fleet-response operations`;
 }
+function locationLabel() { const o = locationOptions().find((x) => x.label.toLowerCase() === STATE.location); return o ? o.label : STATE.location; }
 function onRange(e) {
   const b = e.target.closest("[data-range]"); if (!b) return;
   STATE.range = b.dataset.range;
-  applyRange(); renderRange(); updateSubtitle(); renderContent();
+  applyFilters(); renderRange(); updateSubtitle(); renderContent();
 }
 
 function renderNav() {
@@ -541,11 +562,13 @@ function boot(text) {
   const rng = params.get("range"); if (rng && RANGES.some((r) => r[0] === rng)) STATE.range = rng;
   if (params.get("from")) STATE.customFrom = params.get("from");
   if (params.get("to")) STATE.customTo = params.get("to");
-  applyRange();
+  const geo = params.get("geo"); if (geo) STATE.location = geo.toLowerCase();
+  applyFilters();
   document.addEventListener("click", onToggle);
   document.addEventListener("click", onRange);
   document.addEventListener("change", onRangeInput);
-  renderRange(); updateSubtitle(); renderNav(); renderContent();
+  document.addEventListener("change", onGeo);
+  renderRange(); renderGeo(); updateSubtitle(); renderNav(); renderContent();
   window.__READY__ = true;
 }
 async function init() {

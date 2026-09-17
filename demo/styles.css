@@ -116,6 +116,9 @@ svg text { font-family: inherit; }
 .btn-group .toggle:hover { color: var(--text); }
 .btn-group .toggle.active { background: linear-gradient(135deg, var(--accent), #3b74e0); color: #fff; }
 .btn-group .toggle + .toggle { border-left: 1px solid var(--border); }
+.header-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 #rangeControls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .date-input { background: var(--bg-elev-2); color: var(--text); border: 1px solid var(--border); padding: 6px 10px; border-radius: 9px; font-size: 12px; color-scheme: dark; }
 .date-input:focus { outline: none; border-color: var(--accent); }
+.geo-select { background: var(--bg-elev-2); color: var(--text); border: 1px solid var(--border); padding: 7px 12px; border-radius: 9px; font-size: 12px; font-weight: 600; cursor: pointer; color-scheme: dark; }
+.geo-select:focus { outline: none; border-color: var(--accent); }
