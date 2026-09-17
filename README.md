@@ -70,6 +70,27 @@ npm start          # serves API + built client on PORT (default 3001)
 | `GET /api/data?gid=` | Live fetch + full computed insights and column profile. |
 | `GET /api/rows?gid=` | Live fetch of raw rows for the Data Explorer. |
 
+## Offline demo (`demo/`)
+
+A dependency-free static build of the dashboard (vanilla JS + hand-rolled SVG
+charts) that runs with no npm and no network — handy for previewing against a
+downloaded copy of the sheet. The dashboard in `demo/` is tailored to the Fleet
+Response recovery dataset.
+
+Real data payloads (`demo/data.csv`, `demo/data.js`, `demo/standalone.html`) are
+git-ignored so operational data never lands in the repo. To populate it:
+
+```bash
+# From a downloaded CSV of the sheet:
+python3 demo/embed_data.py path/to/your.csv demo/data.js
+python3 demo/build_standalone.py demo/data.js demo/standalone.html   # single-file build
+# then open demo/standalone.html, or serve the folder:
+python3 -m http.server 5173 --directory demo
+
+# Or generate a safe synthetic sample instead:
+python3 demo/make_sample.py demo/data.csv
+```
+
 ## Pages
 
 - **Overview** — headline KPIs, recoveries-over-time, top breakdown, record aging.

@@ -6,3 +6,8 @@ dist/
 .DS_Store
 coverage/
 *.tsbuildinfo
+
+# Real dataset payloads — keep operational data out of the repo
+demo/data.csv
+demo/data.js
+demo/standalone.html
