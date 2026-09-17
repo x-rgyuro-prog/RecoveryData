@@ -154,14 +154,21 @@ function lineChart(points, key, colr, fmt) {
   return svg(`${g}<polygon points="${area}" fill="${colr}" opacity="0.12"/><polyline points="${line}" fill="none" stroke="${colr}" stroke-width="2.5"/>${dots}${labels}`, W, Ht);
 }
 function barV(bins, colr, rotate) {
-  const W = 560, Ht = 260, pad = { l: 40, r: 12, t: 14, b: rotate ? 52 : 34 };
+  const dense = bins.length > 26; // too many bars for a label under each one
+  const showRotated = rotate && !dense;
+  const W = 560, Ht = 260, pad = { l: 40, r: 12, t: 14, b: showRotated ? 52 : 34 };
   const max = Math.max(...bins.map((b) => b.count), 1), iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b, bw = iw / bins.length;
+  const gap = Math.min(6, bw * 0.3), barW = Math.max(bw - gap, 1), radius = barW > 4 ? 4 : 1;
+  const step = dense ? Math.ceil(bins.length / 12) : 1;
   let g = "";
   for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="11" text-anchor="end">${fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
   const bars = bins.map((b, i) => {
-    const h = (b.count / max) * ih, bx = pad.l + i * bw + 3, by = pad.t + ih - h, cx = bx + (bw - 6) / 2;
-    const lbl = rotate ? `<text x="${cx}" y="${Ht - 36}" fill="#9aa7c2" font-size="9" text-anchor="end" transform="rotate(-35 ${cx} ${Ht - 36})">${esc(b.label)}</text>` : `<text x="${cx}" y="${Ht - 16}" fill="#9aa7c2" font-size="10" text-anchor="middle">${esc(b.label)}</text>`;
-    return `<rect x="${bx}" y="${by}" width="${bw - 6}" height="${h}" rx="4" fill="${bins.length <= 8 ? color(i) : colr}"/>${lbl}`;
+    const h = (b.count / max) * ih, bx = pad.l + i * bw + (bw - barW) / 2, by = pad.t + ih - h, cx = bx + barW / 2;
+    let lbl = "";
+    if (i % step === 0) lbl = showRotated
+      ? `<text x="${cx.toFixed(1)}" y="${Ht - 36}" fill="#9aa7c2" font-size="9" text-anchor="end" transform="rotate(-35 ${cx.toFixed(1)} ${Ht - 36})">${esc(b.label)}</text>`
+      : `<text x="${cx.toFixed(1)}" y="${Ht - 16}" fill="#9aa7c2" font-size="10" text-anchor="middle">${esc(b.label)}</text>`;
+    return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 0).toFixed(1)}" rx="${radius}" fill="${bins.length <= 8 ? color(i) : colr}"/>${lbl}`;
   }).join("");
   return svg(`${g}${bars}`, W, Ht);
 }
