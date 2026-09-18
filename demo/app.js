@@ -564,7 +564,9 @@ function renderComparison() {
   if (!STATE.cmpA || !sups.some((s) => s.label === STATE.cmpA)) STATE.cmpA = sups[0].label;
   if (!STATE.cmpB || !sups.some((s) => s.label === STATE.cmpB)) STATE.cmpB = (sups[1] || sups[0]).label;
   const A = STATE.cmpA, B = STATE.cmpB, same = A === B;
-  const a = recordsForSel(A, same ? STATE.cmpLocA : "all"), b = recordsForSel(B, same ? STATE.cmpLocB : "all");
+  let a = recordsForSel(A, same ? STATE.cmpLocA : "all"), b = recordsForSel(B, same ? STATE.cmpLocB : "all");
+  const completedOnly = STATE.cmp.completed === "completed";
+  if (completedOnly) { const f = (r) => /complete/i.test(clean(r[H.status])); a = a.filter(f); b = b.filter(f); }
   const nameA = same ? `${A} — ${locLabel(STATE.cmpLocA)}` : A;
   const nameB = same ? `${B} — ${locLabel(STATE.cmpLocB)}` : B;
   const opt = (sel) => sups.map((s) => `<option value="${esc(s.label)}"${sel === s.label ? " selected" : ""}>${esc(s.label)} (${fmtNum(s.count)})</option>`).join("");
@@ -574,7 +576,8 @@ function renderComparison() {
   const hint = same
     ? `<span class="cmp-scope">Same supervisor — choose a location per side · ${fmtNum(a.length)} vs ${fmtNum(b.length)} in scope</span>`
     : `<span class="cmp-scope">Respects the filters above · ${fmtNum(a.length)} vs ${fmtNum(b.length)} dispatches in scope</span>`;
-  const pickers = `<div class="card"><div class="cmp-pickers"><span class="muted">Compare</span><select id="cmpA" class="geo-select cmp-a">${opt(A)}</select>${locA}<span class="muted">vs</span><select id="cmpB" class="geo-select cmp-b">${opt(B)}</select>${locB}${hint}</div></div>`;
+  const completedToggle = `<span class="muted">Dispatch status</span><div class="btn-group" data-cmp="completed"><button class="toggle ${!completedOnly ? "active" : ""}" data-opt="all">All</button><button class="toggle ${completedOnly ? "active" : ""}" data-opt="completed">Completed only</button></div>`;
+  const pickers = `<div class="card"><div class="cmp-pickers"><span class="muted">Compare</span><select id="cmpA" class="geo-select cmp-a">${opt(A)}</select>${locA}<span class="muted">vs</span><select id="cmpB" class="geo-select cmp-b">${opt(B)}</select>${locB}</div><div class="cmp-pickers" style="margin-top:10px">${completedToggle}${hint}</div></div>`;
 
   const timeToggle = `<div class="btn-group" data-cmp="time"><button class="toggle ${STATE.cmp.time === "month" ? "active" : ""}" data-opt="month">Monthly</button><button class="toggle ${STATE.cmp.time === "week" ? "active" : ""}" data-opt="week">Weekly</button></div>`;
   const todToggle = `<div class="btn-group" data-cmp="tod"><button class="toggle ${STATE.cmp.tod === "hour" ? "active" : ""}" data-opt="hour">By hour</button><button class="toggle ${STATE.cmp.tod === "part" ? "active" : ""}" data-opt="part">Part of day</button></div>`;
@@ -622,9 +625,9 @@ const PAGES = [
   { id: "explorer", label: "Dispatch Explorer", icon: "🔎", fn: renderExplorer },
   { id: "quality", label: "Data Quality", icon: "✓", fn: renderQuality },
 ];
-let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null, loaded: false, cmpA: null, cmpB: null, cmpLocA: "all", cmpLocB: "all", cmp: { time: "month", tod: "hour" } };
+let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null, loaded: false, cmpA: null, cmpB: null, cmpLocA: "all", cmpLocB: "all", cmp: { time: "month", tod: "hour", completed: "all" } };
 
-const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["30d", "Last 30 days"], ["custom", "Custom"]];
+const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["6m", "Last 6 months"], ["30d", "Last 30 days"], ["custom", "Custom"]];
 const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 function inDateRange(r) {
   if (STATE.range === "custom") {
@@ -634,7 +637,7 @@ function inDateRange(r) {
     if (from && d < from) return false; if (to && d > to) return false; return true;
   }
   if (STATE.range === "all" || !STATE.maxDate) return true;
-  const days = STATE.range === "30d" ? 30 : 365;
+  const days = STATE.range === "30d" ? 30 : STATE.range === "6m" ? 183 : 365;
   const d = parseDate(r[H.date]);
   return d && d.getTime() >= STATE.maxDate.getTime() - days * 86400000;
 }
@@ -673,7 +676,7 @@ function onRangeInput(e) {
   applyFilters(); updateSubtitle(); renderContent();
 }
 function updateSubtitle() {
-  const label = STATE.range === "all" ? "all time" : STATE.range === "12m" ? "last 12 months" : STATE.range === "30d" ? "last 30 days" : `${STATE.customFrom || "…"} → ${STATE.customTo || "…"}`;
+  const label = STATE.range === "all" ? "all time" : STATE.range === "12m" ? "last 12 months" : STATE.range === "6m" ? "last 6 months" : STATE.range === "30d" ? "last 30 days" : `${STATE.customFrom || "…"} → ${STATE.customTo || "…"}`;
   const filtered = STATE.range !== "all" || STATE.location !== "all";
   const extra = filtered ? ` of ${fmtNum(STATE.allRecords.length)}` : "";
   const geo = STATE.location !== "all" ? ` · ${locationLabel()}` : "";
