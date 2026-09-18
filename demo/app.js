@@ -10,6 +10,7 @@
 /* ---------------- palette + format ---------------- */
 const COLORS = ["#4f8cff","#22d3a6","#f6b73c","#ff6b8b","#a78bfa","#38bdf8","#fb923c","#4ade80","#e879f9","#facc15","#2dd4bf","#f472b6"];
 const color = (i) => COLORS[i % COLORS.length];
+const CMP_A = "#4f8cff", CMP_B = "#f6b73c"; // supervisor A / B comparison colors
 const nf = new Intl.NumberFormat("en-US");
 const fmtNum = (n) => nf.format(n);
 const fmtPct = (n) => `${(Math.round(n * 10) / 10).toFixed(1)}%`;
@@ -471,16 +472,136 @@ function renderQuality() {
   return staticCard("Detected Schema & Data Quality", `${STATE.headers.length} columns · ${fmtNum(STATE.records.length)} dispatches`, `<div class="table-wrap"><table class="data"><thead><tr><th>Column</th><th>Type</th><th>Complete</th><th>Distinct</th><th>Top values / summary</th></tr></thead><tbody>${rowsH}</tbody></table></div>`);
 }
 
+/* ---------------- comparison tab ---------------- */
+function supervisorOptions() {
+  const m = new Map();
+  STATE.allRecords.forEach((r) => { const v = clean(r[H.supervisor]); if (!v) return; m.set(v, (m.get(v) || 0) + 1); });
+  return [...m.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+}
+function recordsFor(sup) { return STATE.records.filter((r) => clean(r[H.supervisor]) === sup); }
+function metricsFor(recs) {
+  const total = recs.length;
+  const completed = recs.filter((r) => /complete/i.test(clean(r[H.status]))).length;
+  const turn = recs.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0);
+  const resp = recs.map((r) => toNum(r[H.mDispatchArrive])).filter((n) => n && n > 0);
+  const ons = recs.map((r) => toNum(r[H.mOnScene])).filter((n) => n && n > 0);
+  const l0 = recs.map((r) => clean(r[H.l0])).filter(Boolean);
+  const fp = l0.filter((v) => /false positive/i.test(v)).length, tp = l0.filter((v) => /true positive/i.test(v)).length;
+  const dead = recs.map((r) => toNum(r[H.deadhead])).filter((n) => n !== null && n >= 0);
+  const riders = recs.map((r) => clean(r[H.ridersIn]).toUpperCase()).filter((v) => v === "TRUE" || v === "FALSE");
+  return {
+    total, completionRate: total ? (completed / total) * 100 : 0, medianTurn: median(turn), medianResp: median(resp),
+    medianOns: median(ons), l0fp: tp + fp ? (fp / (tp + fp)) * 100 : 0, deadhead: mean(dead) * 100,
+    riders: riders.length ? (riders.filter((v) => v === "TRUE").length / riders.length) * 100 : 0,
+  };
+}
+function seriesOf(recs, mode, valueFn) {
+  const m = new Map();
+  recs.forEach((r) => {
+    const d = parseDate(r[H.date]); if (!d) return;
+    let key, label;
+    if (mode === "week") { const w = isoWeek(d); key = `${w.year}-W${String(w.week).padStart(2, "0")}`; label = w.date.toLocaleDateString("en-US", { month: "short", year: "2-digit" }); }
+    else { key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; label = fmtPeriod(key); }
+    const g = m.get(key) || { rows: [], label }; g.rows.push(r); m.set(key, g);
+  });
+  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([period, g]) => ({ period, label: g.label, val: valueFn ? valueFn(g.rows) : g.rows.length }));
+}
+function hourCountsOf(recs) { const m = new Map(); recs.forEach((r) => { const n = Number(clean(r[H.hour])); if (Number.isFinite(n)) { const k = String(n).padStart(2, "0"); m.set(k, (m.get(k) || 0) + 1); } }); return m; }
+function partCountsOf(recs) { const b = { Overnight: 0, Morning: 0, Afternoon: 0, Evening: 0 }; recs.forEach((r) => { const n = Number(clean(r[H.hour])); if (!Number.isFinite(n)) return; if (n <= 5) b.Overnight++; else if (n <= 11) b.Morning++; else if (n <= 17) b.Afternoon++; else b.Evening++; }); return b; }
+function catCountsOf(recs, key) { const m = new Map(); recs.forEach((r) => { const v = clean(r[key]); if (v) m.set(v, (m.get(v) || 0) + 1); }); return m; }
+
+function dualLine(sa, sb, nameA, nameB, fmt) {
+  const mapA = new Map(sa.map((p) => [p.period, p.val])), mapB = new Map(sb.map((p) => [p.period, p.val]));
+  const labels = new Map(); sa.concat(sb).forEach((p) => labels.set(p.period, p.label));
+  const periods = [...new Set([...mapA.keys(), ...mapB.keys()])].sort((a, b) => a.localeCompare(b));
+  if (!periods.length) return `<div class="empty-hint">No data for this selection.</div>`;
+  const W = 560, Ht = 300, pad = { l: 48, r: 16, t: 16, b: 34 }, iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b;
+  const max = Math.max(1, ...periods.map((p) => Math.max(mapA.get(p) || 0, mapB.get(p) || 0)));
+  const x = (i) => pad.l + (periods.length === 1 ? iw / 2 : (i / (periods.length - 1)) * iw), y = (v) => pad.t + ih - (v / max) * ih;
+  let g = "";
+  for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="10" text-anchor="end">${fmt ? fmt(max - (max / 4) * t) : fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
+  let lbl = "", last = null, lastX = -1e9;
+  periods.forEach((p, i) => { const cx = x(i), L = labels.get(p) || p; if (L !== last && cx - lastX >= 40) { lbl += `<text x="${cx.toFixed(1)}" y="${Ht - 10}" fill="#9aa7c2" font-size="10" text-anchor="middle">${esc(L)}</text>`; last = L; lastX = cx; } });
+  const lineFor = (map, col) => { const pts = periods.map((p, i) => `${x(i).toFixed(1)},${y(map.get(p) || 0).toFixed(1)}`).join(" "); const dots = periods.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(map.get(p) || 0).toFixed(1)}" r="2.5" fill="${col}"/>`).join(""); return `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5"/>${dots}`; };
+  const legend = `<div class="legend"><div class="legend-item"><span class="legend-swatch" style="background:${CMP_A}"></span>${esc(nameA)}</div><div class="legend-item"><span class="legend-swatch" style="background:${CMP_B}"></span>${esc(nameB)}</div></div>`;
+  return svg(g + lineFor(mapA, CMP_A) + lineFor(mapB, CMP_B) + lbl, W, Ht) + legend;
+}
+function groupedBarV(cats, aVals, bVals, nameA, nameB, rotate) {
+  if (!cats.length) return `<div class="empty-hint">No data for this selection.</div>`;
+  const dense = cats.length > 16, showRot = rotate && !dense;
+  const W = 560, Ht = 280, pad = { l: 40, r: 12, t: 14, b: showRot ? 52 : 34 }, iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b;
+  const max = Math.max(1, ...aVals, ...bVals), slot = iw / cats.length, gap = Math.min(4, slot * 0.15), bw = Math.max((slot - gap) / 2 - 1, 1);
+  let g = "";
+  for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="10" text-anchor="end">${fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
+  const step = dense ? Math.ceil(cats.length / 12) : 1;
+  let bars = "";
+  cats.forEach((c, i) => {
+    const x0 = pad.l + i * slot + gap / 2, ha = (aVals[i] / max) * ih, hb = (bVals[i] / max) * ih;
+    bars += `<rect x="${x0.toFixed(1)}" y="${(pad.t + ih - ha).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(ha, 0).toFixed(1)}" rx="2" fill="${CMP_A}"/>`;
+    bars += `<rect x="${(x0 + bw + 1).toFixed(1)}" y="${(pad.t + ih - hb).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(hb, 0).toFixed(1)}" rx="2" fill="${CMP_B}"/>`;
+    if (i % step === 0) { const cx = x0 + bw; bars += showRot ? `<text x="${cx.toFixed(1)}" y="${Ht - 36}" fill="#9aa7c2" font-size="9" text-anchor="end" transform="rotate(-35 ${cx.toFixed(1)} ${Ht - 36})">${esc(c)}</text>` : `<text x="${cx.toFixed(1)}" y="${Ht - 16}" fill="#9aa7c2" font-size="10" text-anchor="middle">${esc(c)}</text>`; }
+  });
+  const legend = `<div class="legend"><div class="legend-item"><span class="legend-swatch" style="background:${CMP_A}"></span>${esc(nameA)}</div><div class="legend-item"><span class="legend-swatch" style="background:${CMP_B}"></span>${esc(nameB)}</div></div>`;
+  return svg(g + bars, W, Ht) + legend;
+}
+function cmpCard(title, sub, controls, body) { return `<div class="card"><div class="card-head"><div><h3 class="card-title">${esc(title)}</h3>${sub ? `<div class="card-sub">${esc(sub)}</div>` : ""}</div>${controls ? `<div class="controls">${controls}</div>` : ""}</div>${body}</div>`; }
+function cmpKpisCard(a, b, A, B) {
+  const mA = metricsFor(a), mB = metricsFor(b);
+  const rows = [["Total Dispatches", fmtNum(mA.total), fmtNum(mB.total)], ["Completion Rate", fmtPct(mA.completionRate), fmtPct(mB.completionRate)], ["Median Turnaround", fmtMin(mA.medianTurn), fmtMin(mB.medianTurn)], ["Median Response", fmtMin(mA.medianResp), fmtMin(mB.medianResp)], ["Median On-Scene", fmtMin(mA.medianOns), fmtMin(mB.medianOns)], ["L0 False-Positive Rate", fmtPct(mA.l0fp), fmtPct(mB.l0fp)], ["Avg Deadhead", fmtPct(mA.deadhead), fmtPct(mB.deadhead)], ["Riders Onboard", fmtPct(mA.riders), fmtPct(mB.riders)]];
+  const body = `<div class="table-wrap"><table class="data"><thead><tr><th>Metric</th><th style="color:${CMP_A}">${esc(A)}</th><th style="color:${CMP_B}">${esc(B)}</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</tbody></table></div>`;
+  return `<div class="card span-2"><h3 class="card-title">KPI Comparison</h3><div class="card-sub">${esc(A)} vs ${esc(B)} — within the current time range &amp; location filters</div>${body}</div>`;
+}
+function renderComparison() {
+  const sups = supervisorOptions();
+  if (!sups.length) return staticCard("Comparison", "", `<div class="empty-hint">No supervisor data in this file.</div>`);
+  if (!STATE.cmpA || !sups.some((s) => s.label === STATE.cmpA)) STATE.cmpA = sups[0].label;
+  if (!STATE.cmpB || !sups.some((s) => s.label === STATE.cmpB)) STATE.cmpB = (sups[1] || sups[0]).label;
+  const A = STATE.cmpA, B = STATE.cmpB, a = recordsFor(A), b = recordsFor(B);
+  const opt = (sel) => sups.map((s) => `<option value="${esc(s.label)}"${sel === s.label ? " selected" : ""}>${esc(s.label)} (${fmtNum(s.count)})</option>`).join("");
+  const pickers = `<div class="card"><div class="cmp-pickers"><span class="muted">Compare</span><select id="cmpA" class="geo-select cmp-a">${opt(A)}</select><span class="muted">vs</span><select id="cmpB" class="geo-select cmp-b">${opt(B)}</select><span class="cmp-scope">Respects the filters above · ${fmtNum(a.length)} vs ${fmtNum(b.length)} dispatches in scope</span></div></div>`;
+
+  const timeToggle = `<div class="btn-group" data-cmp="time"><button class="toggle ${STATE.cmp.time === "month" ? "active" : ""}" data-opt="month">Monthly</button><button class="toggle ${STATE.cmp.time === "week" ? "active" : ""}" data-opt="week">Weekly</button></div>`;
+  const todToggle = `<div class="btn-group" data-cmp="tod"><button class="toggle ${STATE.cmp.tod === "hour" ? "active" : ""}" data-opt="hour">By hour</button><button class="toggle ${STATE.cmp.tod === "part" ? "active" : ""}" data-opt="part">Part of day</button></div>`;
+
+  const volA = seriesOf(a, STATE.cmp.time), volB = seriesOf(b, STATE.cmp.time);
+  const turnFn = (rows) => { const v = rows.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0); return v.length ? median(v) : 0; };
+  const tA = seriesOf(a, STATE.cmp.time, turnFn), tB = seriesOf(b, STATE.cmp.time, turnFn);
+
+  let todCats, todA, todB;
+  if (STATE.cmp.tod === "part") { todCats = ["Overnight", "Morning", "Afternoon", "Evening"]; const pa = partCountsOf(a), pb = partCountsOf(b); todA = todCats.map((c) => pa[c]); todB = todCats.map((c) => pb[c]); }
+  else { const ha = hourCountsOf(a), hb = hourCountsOf(b); todCats = [...new Set([...ha.keys(), ...hb.keys()])].sort(); todA = todCats.map((c) => ha.get(c) || 0); todB = todCats.map((c) => hb.get(c) || 0); }
+
+  const ta2 = catCountsOf(a, H.type), tb2 = catCountsOf(b, H.type);
+  const typeCats = [...new Set([...ta2.keys(), ...tb2.keys()])].map((c) => ({ c, n: (ta2.get(c) || 0) + (tb2.get(c) || 0) })).sort((x, y) => y.n - x.n).slice(0, 8).map((o) => o.c);
+  const typeA = typeCats.map((c) => ta2.get(c) || 0), typeB = typeCats.map((c) => tb2.get(c) || 0);
+
+  const ra2 = catCountsOf(a, H.reason), rb2 = catCountsOf(b, H.reason);
+  const reasonCats = [...new Set([...ra2.keys(), ...rb2.keys()])].map((c) => ({ c, n: (ra2.get(c) || 0) + (rb2.get(c) || 0) })).sort((x, y) => y.n - x.n).slice(0, 8).map((o) => o.c);
+  const reasonA = reasonCats.map((c) => ra2.get(c) || 0), reasonB = reasonCats.map((c) => rb2.get(c) || 0);
+
+  const charts =
+    cmpCard("Dispatches Over Time", "Volume by period", timeToggle, dualLine(volA, volB, A, B)) +
+    cmpCard("Median Turnaround Trend", "Turnaround minutes by period", timeToggle, dualLine(tA, tB, A, B, (v) => `${Math.round(v)}m`)) +
+    cmpCard("Dispatches by Time of Day", STATE.cmp.tod === "part" ? "Part of day" : "24-hour demand", todToggle, groupedBarV(todCats, todA, todB, A, B, STATE.cmp.tod === "hour")) +
+    cmpCard("Dispatch Type", "Top types", null, groupedBarV(typeCats, typeA, typeB, A, B, true)) +
+    cmpCard("Reason for Event", "Top reasons", null, groupedBarV(reasonCats, reasonA, reasonB, A, B, true));
+
+  return pickers + cmpKpisCard(a, b, A, B) + `<div class="grid chart-grid">${charts}</div>`;
+}
+function onCmp(e) { if (e.target.id === "cmpA") { STATE.cmpA = e.target.value; renderContent(); } else if (e.target.id === "cmpB") { STATE.cmpB = e.target.value; renderContent(); } }
+function onCmpToggle(e) { const grp = e.target.closest("[data-cmp]"), btn = e.target.closest(".toggle"); if (!grp || !btn) return; STATE.cmp[grp.dataset.cmp] = btn.dataset.opt; renderContent(); }
+
 /* ---------------- shell ---------------- */
 const PAGES = [
   { id: "overview", label: "Overview", icon: "◎", fn: renderOverview },
   { id: "performance", label: "Response Performance", icon: "⏱", fn: renderPerformance },
   { id: "patterns", label: "Demand Patterns", icon: "📊", fn: renderPatterns },
   { id: "events", label: "Event Analysis", icon: "🧭", fn: renderEvents },
+  { id: "comparison", label: "Comparison", icon: "⚖", fn: renderComparison },
   { id: "explorer", label: "Dispatch Explorer", icon: "🔎", fn: renderExplorer },
   { id: "quality", label: "Data Quality", icon: "✓", fn: renderQuality },
 ];
-let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null, loaded: false };
+let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null, loaded: false, cmpA: null, cmpB: null, cmp: { time: "month", tod: "hour" } };
 
 const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["30d", "Last 30 days"], ["custom", "Custom"]];
 const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -603,8 +724,10 @@ function boot(text) {
 async function init() {
   document.addEventListener("click", onToggle);
   document.addEventListener("click", onRange);
+  document.addEventListener("click", onCmpToggle);
   document.addEventListener("change", onRangeInput);
   document.addEventListener("change", onGeo);
+  document.addEventListener("change", onCmp);
   document.getElementById("fileInput").addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (f) readFile(f); e.target.value = ""; });
   document.addEventListener("click", (e) => { if (e.target.id === "newFileBtn") showUpload(); });
 
