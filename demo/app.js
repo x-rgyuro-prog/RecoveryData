@@ -479,6 +479,13 @@ function supervisorOptions() {
   return [...m.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
 }
 function recordsFor(sup) { return STATE.records.filter((r) => clean(r[H.supervisor]) === sup); }
+function recordsForSel(sup, loc) { return STATE.records.filter((r) => clean(r[H.supervisor]) === sup && (loc === "all" || clean(r[H.location]).toLowerCase() === loc)); }
+function supLocationOptions(sup) {
+  const m = new Map();
+  STATE.records.filter((r) => clean(r[H.supervisor]) === sup).forEach((r) => { const v = clean(r[H.location]); if (!v) return; const k = v.toLowerCase(); const e = m.get(k) || { label: v, count: 0 }; e.count++; m.set(k, e); });
+  return [...m.values()].sort((a, b) => b.count - a.count);
+}
+function locLabel(loc) { if (loc === "all") return "All locations"; const o = locationOptions().find((x) => x.label.toLowerCase() === loc); return o ? o.label : loc; }
 function metricsFor(recs) {
   const total = recs.length;
   const completed = recs.filter((r) => /complete/i.test(clean(r[H.status]))).length;
@@ -556,9 +563,18 @@ function renderComparison() {
   if (!sups.length) return staticCard("Comparison", "", `<div class="empty-hint">No supervisor data in this file.</div>`);
   if (!STATE.cmpA || !sups.some((s) => s.label === STATE.cmpA)) STATE.cmpA = sups[0].label;
   if (!STATE.cmpB || !sups.some((s) => s.label === STATE.cmpB)) STATE.cmpB = (sups[1] || sups[0]).label;
-  const A = STATE.cmpA, B = STATE.cmpB, a = recordsFor(A), b = recordsFor(B);
+  const A = STATE.cmpA, B = STATE.cmpB, same = A === B;
+  const a = recordsForSel(A, same ? STATE.cmpLocA : "all"), b = recordsForSel(B, same ? STATE.cmpLocB : "all");
+  const nameA = same ? `${A} — ${locLabel(STATE.cmpLocA)}` : A;
+  const nameB = same ? `${B} — ${locLabel(STATE.cmpLocB)}` : B;
   const opt = (sel) => sups.map((s) => `<option value="${esc(s.label)}"${sel === s.label ? " selected" : ""}>${esc(s.label)} (${fmtNum(s.count)})</option>`).join("");
-  const pickers = `<div class="card"><div class="cmp-pickers"><span class="muted">Compare</span><select id="cmpA" class="geo-select cmp-a">${opt(A)}</select><span class="muted">vs</span><select id="cmpB" class="geo-select cmp-b">${opt(B)}</select><span class="cmp-scope">Respects the filters above · ${fmtNum(a.length)} vs ${fmtNum(b.length)} dispatches in scope</span></div></div>`;
+  const locOpt = (sup, sel) => `<option value="all"${sel === "all" ? " selected" : ""}>All locations</option>` + supLocationOptions(sup).map((o) => `<option value="${esc(o.label.toLowerCase())}"${sel === o.label.toLowerCase() ? " selected" : ""}>${esc(o.label)} (${fmtNum(o.count)})</option>`).join("");
+  const locA = same ? `<select id="cmpLocA" class="geo-select cmp-a">${locOpt(A, STATE.cmpLocA)}</select>` : "";
+  const locB = same ? `<select id="cmpLocB" class="geo-select cmp-b">${locOpt(B, STATE.cmpLocB)}</select>` : "";
+  const hint = same
+    ? `<span class="cmp-scope">Same supervisor — choose a location per side · ${fmtNum(a.length)} vs ${fmtNum(b.length)} in scope</span>`
+    : `<span class="cmp-scope">Respects the filters above · ${fmtNum(a.length)} vs ${fmtNum(b.length)} dispatches in scope</span>`;
+  const pickers = `<div class="card"><div class="cmp-pickers"><span class="muted">Compare</span><select id="cmpA" class="geo-select cmp-a">${opt(A)}</select>${locA}<span class="muted">vs</span><select id="cmpB" class="geo-select cmp-b">${opt(B)}</select>${locB}${hint}</div></div>`;
 
   const timeToggle = `<div class="btn-group" data-cmp="time"><button class="toggle ${STATE.cmp.time === "month" ? "active" : ""}" data-opt="month">Monthly</button><button class="toggle ${STATE.cmp.time === "week" ? "active" : ""}" data-opt="week">Weekly</button></div>`;
   const todToggle = `<div class="btn-group" data-cmp="tod"><button class="toggle ${STATE.cmp.tod === "hour" ? "active" : ""}" data-opt="hour">By hour</button><button class="toggle ${STATE.cmp.tod === "part" ? "active" : ""}" data-opt="part">Part of day</button></div>`;
@@ -580,15 +596,20 @@ function renderComparison() {
   const reasonA = reasonCats.map((c) => ra2.get(c) || 0), reasonB = reasonCats.map((c) => rb2.get(c) || 0);
 
   const charts =
-    cmpCard("Dispatches Over Time", "Volume by period", timeToggle, dualLine(volA, volB, A, B)) +
-    cmpCard("Median Turnaround Trend", "Turnaround minutes by period", timeToggle, dualLine(tA, tB, A, B, (v) => `${Math.round(v)}m`)) +
-    cmpCard("Dispatches by Time of Day", STATE.cmp.tod === "part" ? "Part of day" : "24-hour demand", todToggle, groupedBarV(todCats, todA, todB, A, B, STATE.cmp.tod === "hour")) +
-    cmpCard("Dispatch Type", "Top types", null, groupedBarV(typeCats, typeA, typeB, A, B, true)) +
-    cmpCard("Reason for Event", "Top reasons", null, groupedBarV(reasonCats, reasonA, reasonB, A, B, true));
+    cmpCard("Dispatches Over Time", "Volume by period", timeToggle, dualLine(volA, volB, nameA, nameB)) +
+    cmpCard("Median Turnaround Trend", "Turnaround minutes by period", timeToggle, dualLine(tA, tB, nameA, nameB, (v) => `${Math.round(v)}m`)) +
+    cmpCard("Dispatches by Time of Day", STATE.cmp.tod === "part" ? "Part of day" : "24-hour demand", todToggle, groupedBarV(todCats, todA, todB, nameA, nameB, STATE.cmp.tod === "hour")) +
+    cmpCard("Dispatch Type", "Top types", null, groupedBarV(typeCats, typeA, typeB, nameA, nameB, true)) +
+    cmpCard("Reason for Event", "Top reasons", null, groupedBarV(reasonCats, reasonA, reasonB, nameA, nameB, true));
 
-  return pickers + cmpKpisCard(a, b, A, B) + `<div class="grid chart-grid">${charts}</div>`;
+  return pickers + cmpKpisCard(a, b, nameA, nameB) + `<div class="grid chart-grid">${charts}</div>`;
 }
-function onCmp(e) { if (e.target.id === "cmpA") { STATE.cmpA = e.target.value; renderContent(); } else if (e.target.id === "cmpB") { STATE.cmpB = e.target.value; renderContent(); } }
+function onCmp(e) {
+  if (e.target.id === "cmpA") { STATE.cmpA = e.target.value; renderContent(); }
+  else if (e.target.id === "cmpB") { STATE.cmpB = e.target.value; renderContent(); }
+  else if (e.target.id === "cmpLocA") { STATE.cmpLocA = e.target.value; renderContent(); }
+  else if (e.target.id === "cmpLocB") { STATE.cmpLocB = e.target.value; renderContent(); }
+}
 function onCmpToggle(e) { const grp = e.target.closest("[data-cmp]"), btn = e.target.closest(".toggle"); if (!grp || !btn) return; STATE.cmp[grp.dataset.cmp] = btn.dataset.opt; renderContent(); }
 
 /* ---------------- shell ---------------- */
@@ -601,7 +622,7 @@ const PAGES = [
   { id: "explorer", label: "Dispatch Explorer", icon: "🔎", fn: renderExplorer },
   { id: "quality", label: "Data Quality", icon: "✓", fn: renderQuality },
 ];
-let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null, loaded: false, cmpA: null, cmpB: null, cmp: { time: "month", tod: "hour" } };
+let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null, loaded: false, cmpA: null, cmpB: null, cmpLocA: "all", cmpLocB: "all", cmp: { time: "month", tod: "hour" } };
 
 const RANGES = [["all", "All time"], ["12m", "Last 12 months"], ["30d", "Last 30 days"], ["custom", "Custom"]];
 const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
