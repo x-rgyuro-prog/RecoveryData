@@ -136,3 +136,9 @@ svg text { font-family: inherit; }
 .dz-error { color: var(--danger); font-size: 13px; margin-top: 16px; }
 #newFileBtn { background: var(--bg-elev-2); color: var(--text); border: 1px solid var(--border); padding: 7px 12px; border-radius: 9px; font-size: 12px; font-weight: 600; cursor: pointer; }
 #newFileBtn:hover { border-color: var(--accent); }
+
+/* comparison pickers */
+.cmp-pickers { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cmp-a { border-color: #4f8cff !important; }
+.cmp-b { border-color: #f6b73c !important; }
+.cmp-scope { margin-left: auto; font-size: 12px; color: var(--text-faint); }
