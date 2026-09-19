@@ -376,7 +376,7 @@ const WIDGETS = {
     title: "Turnaround Trend", defaults: { metric: "median", group: "month" },
     controls: [{ group: "metric", opts: [["median", "Median"], ["mean", "Mean"]] }, { group: "group", opts: [["month", "Monthly"], ["week", "Weekly"]] }],
     sub: (s) => `${s.metric === "mean" ? "Mean" : "Median"} turnaround (min), ${s.group === "week" ? "weekly" : "monthly"}`,
-    render(s) { const agg = s.metric === "mean" ? mean : median; const pts = series(H.date, s.group, (rs) => { const v = rs.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0); return v.length ? agg(v) : 0; }); return lineChart(pts, "val", color(1), (v) => `${Math.round(v)}m`); },
+    render(s) { const agg = s.metric === "mean" ? mean : median; const pts = series(H.date, s.group, (rs) => { const v = rs.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0); return v.length ? agg(v) : 0; }).filter((p) => p.val > 0); return lineChart(pts, "val", color(1), (v) => `${Math.round(v)}m`); },
   },
   turnLoc: {
     title: "Turnaround by Location", defaults: { metric: "median" },
@@ -517,21 +517,30 @@ function hourCountsOf(recs) { const m = new Map(); recs.forEach((r) => { const n
 function partCountsOf(recs) { const b = { Overnight: 0, Morning: 0, Afternoon: 0, Evening: 0 }; recs.forEach((r) => { const n = Number(clean(r[H.hour])); if (!Number.isFinite(n)) return; if (n <= 5) b.Overnight++; else if (n <= 11) b.Morning++; else if (n <= 17) b.Afternoon++; else b.Evening++; }); return b; }
 function catCountsOf(recs, key) { const m = new Map(); recs.forEach((r) => { const v = clean(r[key]); if (v) m.set(v, (m.get(v) || 0) + 1); }); return m; }
 
-function dualLine(sa, sb, nameA, nameB, fmt) {
+function dualLine(sa, sb, nameA, nameB, fmt, fillZero) {
+  if (fillZero === undefined) fillZero = true; // volume: 0 is real. metrics: pass false to gap missing months
   const mapA = new Map(sa.map((p) => [p.period, p.val])), mapB = new Map(sb.map((p) => [p.period, p.val]));
   const labels = new Map(); sa.concat(sb).forEach((p) => labels.set(p.period, p.label));
   const periods = [...new Set([...mapA.keys(), ...mapB.keys()])].sort((a, b) => a.localeCompare(b));
   if (!periods.length) return `<div class="empty-hint">No data for this selection.</div>`;
+  const idx = new Map(periods.map((p, i) => [p, i]));
   const W = 560, Ht = 300, pad = { l: 48, r: 16, t: 16, b: 34 }, iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b;
-  const max = Math.max(1, ...periods.map((p) => Math.max(mapA.get(p) || 0, mapB.get(p) || 0)));
+  const allVals = fillZero ? periods.map((p) => Math.max(mapA.get(p) || 0, mapB.get(p) || 0)) : [...mapA.values(), ...mapB.values()];
+  const max = Math.max(1, ...allVals);
   const x = (i) => pad.l + (periods.length === 1 ? iw / 2 : (i / (periods.length - 1)) * iw), y = (v) => pad.t + ih - (v / max) * ih;
   let g = "";
   for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="10" text-anchor="end">${fmt ? fmt(max - (max / 4) * t) : fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
   let lbl = "", last = null, lastX = -1e9;
   periods.forEach((p, i) => { const cx = x(i), L = labels.get(p) || p; if (L !== last && cx - lastX >= 40) { lbl += `<text x="${cx.toFixed(1)}" y="${Ht - 10}" fill="#9aa7c2" font-size="10" text-anchor="middle">${esc(L)}</text>`; last = L; lastX = cx; } });
-  const lineFor = (map, col) => { const pts = periods.map((p, i) => `${x(i).toFixed(1)},${y(map.get(p) || 0).toFixed(1)}`).join(" "); const dots = periods.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(map.get(p) || 0).toFixed(1)}" r="2.5" fill="${col}"/>`).join(""); return `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5"/>${dots}`; };
+  const lineFor = (series, map, col) => {
+    const pts = fillZero ? periods.map((p) => [x(idx.get(p)), y(map.get(p) || 0)]) : series.map((p) => [x(idx.get(p.period)), y(p.val)]);
+    if (!pts.length) return "";
+    const poly = pts.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(" ");
+    const dots = pts.map((q) => `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="2.5" fill="${col}"/>`).join("");
+    return `<polyline points="${poly}" fill="none" stroke="${col}" stroke-width="2.5"/>${dots}`;
+  };
   const legend = `<div class="legend"><div class="legend-item"><span class="legend-swatch" style="background:${CMP_A}"></span>${esc(nameA)}</div><div class="legend-item"><span class="legend-swatch" style="background:${CMP_B}"></span>${esc(nameB)}</div></div>`;
-  return svg(g + lineFor(mapA, CMP_A) + lineFor(mapB, CMP_B) + lbl, W, Ht) + legend;
+  return svg(g + lineFor(sa, mapA, CMP_A) + lineFor(sb, mapB, CMP_B) + lbl, W, Ht) + legend;
 }
 function groupedBarV(cats, aVals, bVals, nameA, nameB, rotate) {
   if (!cats.length) return `<div class="empty-hint">No data for this selection.</div>`;
@@ -584,7 +593,8 @@ function renderComparison() {
 
   const volA = seriesOf(a, STATE.cmp.time), volB = seriesOf(b, STATE.cmp.time);
   const turnFn = (rows) => { const v = rows.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0); return v.length ? median(v) : 0; };
-  const tA = seriesOf(a, STATE.cmp.time, turnFn), tB = seriesOf(b, STATE.cmp.time, turnFn);
+  // Only plot months that actually have a measured turnaround (>0); others become gaps, not zeros.
+  const tA = seriesOf(a, STATE.cmp.time, turnFn).filter((p) => p.val > 0), tB = seriesOf(b, STATE.cmp.time, turnFn).filter((p) => p.val > 0);
 
   let todCats, todA, todB;
   if (STATE.cmp.tod === "part") { todCats = ["Overnight", "Morning", "Afternoon", "Evening"]; const pa = partCountsOf(a), pb = partCountsOf(b); todA = todCats.map((c) => pa[c]); todB = todCats.map((c) => pb[c]); }
@@ -600,7 +610,7 @@ function renderComparison() {
 
   const charts =
     cmpCard("Dispatches Over Time", "Volume by period", timeToggle, dualLine(volA, volB, nameA, nameB)) +
-    cmpCard("Median Turnaround Trend", "Turnaround minutes by period", timeToggle, dualLine(tA, tB, nameA, nameB, (v) => `${Math.round(v)}m`)) +
+    cmpCard("Median Turnaround Trend", "Turnaround minutes by period (months with no measured turnaround are skipped)", timeToggle, dualLine(tA, tB, nameA, nameB, (v) => `${Math.round(v)}m`, false)) +
     cmpCard("Dispatches by Time of Day", STATE.cmp.tod === "part" ? "Part of day" : "24-hour demand", todToggle, groupedBarV(todCats, todA, todB, nameA, nameB, STATE.cmp.tod === "hour")) +
     cmpCard("Dispatch Type", "Top types", null, groupedBarV(typeCats, typeA, typeB, nameA, nameB, true)) +
     cmpCard("Reason for Event", "Top reasons", null, groupedBarV(reasonCats, reasonA, reasonB, nameA, nameB, true));
