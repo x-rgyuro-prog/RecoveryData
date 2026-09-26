@@ -12,6 +12,26 @@ ROOT = os.path.dirname(HERE)
 css = open(os.path.join(ROOT, "demo", "styles.css"), encoding="utf-8").read()
 app = open(os.path.join(ROOT, "demo", "app.js"), encoding="utf-8").read()
 
+
+def js_ascii(s):
+    """Escape non-ASCII to \\uXXXX so Apps Script's sandboxed document.write
+    (which chokes on emoji/special punctuation) never sees a raw non-ASCII byte.
+    All non-ASCII in app.js live inside string literals, so this is safe."""
+    out = []
+    for ch in s:
+        o = ord(ch)
+        if o < 128:
+            out.append(ch)
+        elif o <= 0xFFFF:
+            out.append("\\u%04x" % o)
+        else:
+            o -= 0x10000
+            out.append("\\u%04x\\u%04x" % (0xD800 + (o >> 10), 0xDC00 + (o & 0x3FF)))
+    return "".join(out)
+
+
+app = js_ascii(app)
+
 TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,7 +63,7 @@ __CSS__
       <div class="topbar">
         <div>
           <h1 class="page-title">Fleet Response Dashboard</h1>
-          <div class="page-subtitle" id="subtitle">Fetching live data from Google Sheets\u2026</div>
+          <div class="page-subtitle" id="subtitle">Fetching live data from Google Sheets...</div>
         </div>
         <div class="header-controls">
           <div class="controls" id="rangeControls"></div>

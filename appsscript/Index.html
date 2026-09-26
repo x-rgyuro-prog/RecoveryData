@@ -173,7 +173,7 @@ svg text { font-family: inherit; }
       <div class="topbar">
         <div>
           <h1 class="page-title">Fleet Response Dashboard</h1>
-          <div class="page-subtitle" id="subtitle">Fetching live data from Google Sheets…</div>
+          <div class="page-subtitle" id="subtitle">Fetching live data from Google Sheets...</div>
         </div>
         <div class="header-controls">
           <div class="controls" id="rangeControls"></div>
@@ -190,11 +190,11 @@ svg text { font-family: inherit; }
   <script>
 "use strict";
 /* ============================================================
-   Fleet Response — operations analytics (interactive)
+   Fleet Response \u2014 operations analytics (interactive)
    Tailored to the FR Historical Data (Responses) dataset.
    Charts support view toggles (bar/pie/line) and grouping
-   toggles (hour↔part-of-day, day↔weekday/weekend, month↔week,
-   median↔mean), combinable per the user's request.
+   toggles (hour\u2194part-of-day, day\u2194weekday/weekend, month\u2194week,
+   median\u2194mean), combinable per the user's request.
    ============================================================ */
 
 /* ---------------- palette + format ---------------- */
@@ -374,7 +374,7 @@ function barH(items, fmtRight) {
   const bars = items.map((it, i) => {
     const v = it.val ?? it.count, y = pad.t + i * rowH, w = Math.max((v / max) * iw, 1);
     const right = fmtRight ? fmtRight(it) : fmtNum(v);
-    return `<text x="${pad.l - 8}" y="${y + rowH / 2 + 4}" fill="#c8d2e6" font-size="11" text-anchor="end">${esc(it.label.length > 26 ? it.label.slice(0, 25) + "…" : it.label)}</text>` +
+    return `<text x="${pad.l - 8}" y="${y + rowH / 2 + 4}" fill="#c8d2e6" font-size="11" text-anchor="end">${esc(it.label.length > 26 ? it.label.slice(0, 25) + "\u2026" : it.label)}</text>` +
       `<rect x="${pad.l}" y="${y + 4}" width="${w}" height="${rowH - 10}" rx="4" fill="${color(i)}"/>` +
       `<text x="${pad.l + w + 6}" y="${y + rowH / 2 + 4}" fill="#9aa7c2" font-size="11">${esc(right)}</text>`;
   }).join("");
@@ -449,7 +449,7 @@ function scatterChart(yKey, yLabel) {
   for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="10" text-anchor="end">${Math.round(yMax - (yMax / 4) * t)}</text>`; }
   for (let t = 0; t <= 4; t++) { const gx = pad.l + (iw / 4) * t; g += `<text x="${gx}" y="${Ht - 24}" fill="#9aa7c2" font-size="10" text-anchor="middle">${Math.round((xMax / 4) * t)}</text>`; }
   const dots = pts.map((p) => `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="2.5" fill="${color(0)}" opacity="0.32"/>`).join("");
-  const ax = `<text x="${pad.l + iw / 2}" y="${Ht - 6}" fill="#9aa7c2" font-size="11" text-anchor="middle">Response time — dispatch → on scene (min)</text><text x="14" y="${pad.t + ih / 2}" fill="#9aa7c2" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${pad.t + ih / 2})">${esc(yLabel)} (min)</text>`;
+  const ax = `<text x="${pad.l + iw / 2}" y="${Ht - 6}" fill="#9aa7c2" font-size="11" text-anchor="middle">Response time \u2014 dispatch \u2192 on scene (min)</text><text x="14" y="${pad.t + ih / 2}" fill="#9aa7c2" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${pad.t + ih / 2})">${esc(yLabel)} (min)</text>`;
   return svg(g + dots + ax, W, Ht);
 }
 
@@ -537,7 +537,7 @@ const WIDGETS = {
     render(s) { return catChart(counts(H.supervisor, 14), s.view, "dispatches"); },
   },
   heat: {
-    title: "Dispatch Heatmap — Day × Hour", defaults: { metric: "count" },
+    title: "Dispatch Heatmap \u2014 Day \u00d7 Hour", defaults: { metric: "count" },
     controls: [{ group: "metric", opts: [["count", "Volume"], ["turnaround", "Median turnaround"]] }],
     sub: (s) => (s.metric === "turnaround" ? "Median turnaround (min) by day & hour" : "Dispatch volume by day & hour"),
     render(s) { return heatmap(s.metric); },
@@ -559,7 +559,7 @@ const WIDGETS = {
     controls: [{ group: "metric", opts: [["median", "Median"], ["mean", "Mean"]] }],
     sub: (s) => `${s.metric === "mean" ? "Mean" : "Median"} minutes per stage (timed dispatches)`,
     render(s) { const agg = s.metric === "mean" ? mean : median; const stages = [
-        { label: "Created → Accepted", val: agg(posNums(H.mCreatedAccept)) }, { label: "Accepted → On Scene", val: agg(posNums(H.mAcceptArrive)) },
+        { label: "Created \u2192 Accepted", val: agg(posNums(H.mCreatedAccept)) }, { label: "Accepted \u2192 On Scene", val: agg(posNums(H.mAcceptArrive)) },
         { label: "On-Scene Work", val: agg(posNums(H.mOnScene)) }, { label: "Return to Base", val: agg(posNums(H.mReturn)) }]; return stagesBar(stages, s.metric === "mean" ? "Mean" : "Median"); },
   },
   turnTrend: {
@@ -572,13 +572,13 @@ const WIDGETS = {
     title: "Turnaround by Location", defaults: { metric: "median" },
     controls: [{ group: "metric", opts: [["median", "Median"], ["mean", "Mean"]] }],
     sub: (s) => `${s.metric === "mean" ? "Mean" : "Median"} turnaround, slowest first`,
-    render(s) { const agg = s.metric === "mean" ? mean : median; return barH(aggByCategory(H.location, H.mTurnaround, 8, agg), (it) => `${it.val.toFixed(0)}m · n=${it.count}`); },
+    render(s) { const agg = s.metric === "mean" ? mean : median; return barH(aggByCategory(H.location, H.mTurnaround, 8, agg), (it) => `${it.val.toFixed(0)}m \u00b7 n=${it.count}`); },
   },
   turnType: {
     title: "Turnaround by Dispatch Type", defaults: { metric: "median" },
     controls: [{ group: "metric", opts: [["median", "Median"], ["mean", "Mean"]] }],
     sub: (s) => `${s.metric === "mean" ? "Mean" : "Median"} turnaround, slowest first`,
-    render(s) { const agg = s.metric === "mean" ? mean : median; return barH(aggByCategory(H.type, H.mTurnaround, 10, agg), (it) => `${it.val.toFixed(0)}m · n=${it.count}`); },
+    render(s) { const agg = s.metric === "mean" ? mean : median; return barH(aggByCategory(H.type, H.mTurnaround, 10, agg), (it) => `${it.val.toFixed(0)}m \u00b7 n=${it.count}`); },
   },
 };
 
@@ -611,9 +611,9 @@ function buildKpis() {
   const turn = posNums(H.mTurnaround), deadhead = nums(H.deadhead).filter((n) => n >= 0);
   const cards = [
     ["Total Dispatches", fmtNum(total), "Fleet-response events"],
-    ["Completion Rate", fmtPct((completed / total) * 100), `${fmtNum(completed)} completed · ${fmtNum(total - completed)} cancelled`],
+    ["Completion Rate", fmtPct((completed / total) * 100), `${fmtNum(completed)} completed \u00b7 ${fmtNum(total - completed)} cancelled`],
     ["Median Turnaround", fmtMin(median(turn)), `${turn.length} timed events`],
-    ["Median Response", fmtMin(median(posNums(H.mDispatchArrive))), "Dispatch → on scene"],
+    ["Median Response", fmtMin(median(posNums(H.mDispatchArrive))), "Dispatch \u2192 on scene"],
     ["Median On-Scene", fmtMin(median(posNums(H.mOnScene))), "Time working the scene"],
     ["L0 False-Positive Rate", fmtPct(tp + fp ? (fp / (tp + fp)) * 100 : 0), `${fmtNum(fp)} FP of ${fmtNum(tp + fp)} L0s`],
     ["Riders Onboard", fmtPct(pctTrue(H.ridersIn)), "Dispatches with riders in the VH6"],
@@ -639,7 +639,7 @@ function renderExplorer() {
   const rows = STATE.records.slice(0, 150);
   const th = EXPLORER_COLS.map((h) => `<th>${esc(EXPLORER_LABELS[h] || h)}</th>`).join("");
   const tr = rows.map((r) => `<tr>${EXPLORER_COLS.map((h) => `<td>${esc(r[h] ?? "")}</td>`).join("")}</tr>`).join("");
-  return staticCard("Dispatch Explorer", `Showing ${rows.length} of ${fmtNum(STATE.records.length)} dispatches · key fields (${STATE.headers.length} total columns)`, `<div class="table-wrap"><table class="data"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
+  return staticCard("Dispatch Explorer", `Showing ${rows.length} of ${fmtNum(STATE.records.length)} dispatches \u00b7 key fields (${STATE.headers.length} total columns)`, `<div class="table-wrap"><table class="data"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
 }
 function inferType(name, values) {
   if (!values.length) return "text";
@@ -655,11 +655,11 @@ function renderQuality() {
     const type = inferType(h, real.slice(0, 400)), comp = all.length ? Math.round((filled.length / all.length) * 100) : 0;
     const c = comp > 80 ? "#22d3a6" : comp > 50 ? "#f6b73c" : "#ff6b8b";
     let summary = "";
-    if (type === "number") { const ns = real.map(toNum).filter((n) => n !== null); if (ns.length) summary = `min ${fmtNum(Math.round(Math.min(...ns)))} · avg ${fmtNum(Math.round(mean(ns)))} · max ${fmtNum(Math.round(Math.max(...ns)))}`; }
-    else { const m = new Map(); real.forEach((v) => m.set(v, (m.get(v) || 0) + 1)); summary = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([v, n]) => `${v.length > 22 ? v.slice(0, 21) + "…" : v} (${n})`).join(", "); }
-    return `<tr><td style="font-weight:600">${esc(h.length > 40 ? h.slice(0, 39) + "…" : h)}</td><td><span class="pill">${type}</span></td><td><span class="bar-track"><span class="bar-fill" style="width:${comp}%;background:${c}"></span></span> <span class="muted" style="font-size:12px">${comp}%</span></td><td>${fmtNum(new Set(real).size)}</td><td class="muted" style="white-space:normal;max-width:340px">${esc(summary)}</td></tr>`;
+    if (type === "number") { const ns = real.map(toNum).filter((n) => n !== null); if (ns.length) summary = `min ${fmtNum(Math.round(Math.min(...ns)))} \u00b7 avg ${fmtNum(Math.round(mean(ns)))} \u00b7 max ${fmtNum(Math.round(Math.max(...ns)))}`; }
+    else { const m = new Map(); real.forEach((v) => m.set(v, (m.get(v) || 0) + 1)); summary = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([v, n]) => `${v.length > 22 ? v.slice(0, 21) + "\u2026" : v} (${n})`).join(", "); }
+    return `<tr><td style="font-weight:600">${esc(h.length > 40 ? h.slice(0, 39) + "\u2026" : h)}</td><td><span class="pill">${type}</span></td><td><span class="bar-track"><span class="bar-fill" style="width:${comp}%;background:${c}"></span></span> <span class="muted" style="font-size:12px">${comp}%</span></td><td>${fmtNum(new Set(real).size)}</td><td class="muted" style="white-space:normal;max-width:340px">${esc(summary)}</td></tr>`;
   }).join("");
-  return staticCard("Detected Schema & Data Quality", `${STATE.headers.length} columns · ${fmtNum(STATE.records.length)} dispatches`, `<div class="table-wrap"><table class="data"><thead><tr><th>Column</th><th>Type</th><th>Complete</th><th>Distinct</th><th>Top values / summary</th></tr></thead><tbody>${rowsH}</tbody></table></div>`);
+  return staticCard("Detected Schema & Data Quality", `${STATE.headers.length} columns \u00b7 ${fmtNum(STATE.records.length)} dispatches`, `<div class="table-wrap"><table class="data"><thead><tr><th>Column</th><th>Type</th><th>Complete</th><th>Distinct</th><th>Top values / summary</th></tr></thead><tbody>${rowsH}</tbody></table></div>`);
 }
 
 /* ---------------- comparison tab ---------------- */
@@ -755,7 +755,7 @@ function cmpKpisCard(a, b, A, B) {
   const mA = metricsFor(a), mB = metricsFor(b);
   const rows = [["Total Dispatches", fmtNum(mA.total), fmtNum(mB.total)], ["Completion Rate", fmtPct(mA.completionRate), fmtPct(mB.completionRate)], ["Median Turnaround", fmtMin(mA.medianTurn), fmtMin(mB.medianTurn)], ["Median Response", fmtMin(mA.medianResp), fmtMin(mB.medianResp)], ["Median On-Scene", fmtMin(mA.medianOns), fmtMin(mB.medianOns)], ["L0 False-Positive Rate", fmtPct(mA.l0fp), fmtPct(mB.l0fp)], ["Avg Deadhead", fmtPct(mA.deadhead), fmtPct(mB.deadhead)], ["Riders Onboard", fmtPct(mA.riders), fmtPct(mB.riders)]];
   const body = `<div class="table-wrap"><table class="data"><thead><tr><th>Metric</th><th style="color:${CMP_A}">${esc(A)}</th><th style="color:${CMP_B}">${esc(B)}</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</tbody></table></div>`;
-  return `<div class="card span-2"><h3 class="card-title">KPI Comparison</h3><div class="card-sub">${esc(A)} vs ${esc(B)} — within the current time range &amp; location filters</div>${body}</div>`;
+  return `<div class="card span-2"><h3 class="card-title">KPI Comparison</h3><div class="card-sub">${esc(A)} vs ${esc(B)} \u2014 within the current time range &amp; location filters</div>${body}</div>`;
 }
 function renderComparison() {
   const sups = supervisorOptions();
@@ -766,15 +766,15 @@ function renderComparison() {
   let a = recordsForSel(A, same ? STATE.cmpLocA : "all"), b = recordsForSel(B, same ? STATE.cmpLocB : "all");
   const completedOnly = STATE.cmp.completed === "completed";
   if (completedOnly) { const f = (r) => /complete/i.test(clean(r[H.status])); a = a.filter(f); b = b.filter(f); }
-  const nameA = same ? `${A} — ${locLabel(STATE.cmpLocA)}` : A;
-  const nameB = same ? `${B} — ${locLabel(STATE.cmpLocB)}` : B;
+  const nameA = same ? `${A} \u2014 ${locLabel(STATE.cmpLocA)}` : A;
+  const nameB = same ? `${B} \u2014 ${locLabel(STATE.cmpLocB)}` : B;
   const opt = (sel) => sups.map((s) => `<option value="${esc(s.label)}"${sel === s.label ? " selected" : ""}>${esc(s.label)} (${fmtNum(s.count)})</option>`).join("");
   const locOpt = (sup, sel) => `<option value="all"${sel === "all" ? " selected" : ""}>All locations</option>` + supLocationOptions(sup).map((o) => `<option value="${esc(o.label.toLowerCase())}"${sel === o.label.toLowerCase() ? " selected" : ""}>${esc(o.label)} (${fmtNum(o.count)})</option>`).join("");
   const locA = same ? `<select id="cmpLocA" class="geo-select cmp-a">${locOpt(A, STATE.cmpLocA)}</select>` : "";
   const locB = same ? `<select id="cmpLocB" class="geo-select cmp-b">${locOpt(B, STATE.cmpLocB)}</select>` : "";
   const hint = same
-    ? `<span class="cmp-scope">Same supervisor — choose a location per side · ${fmtNum(a.length)} vs ${fmtNum(b.length)} in scope</span>`
-    : `<span class="cmp-scope">Respects the filters above · ${fmtNum(a.length)} vs ${fmtNum(b.length)} dispatches in scope</span>`;
+    ? `<span class="cmp-scope">Same supervisor \u2014 choose a location per side \u00b7 ${fmtNum(a.length)} vs ${fmtNum(b.length)} in scope</span>`
+    : `<span class="cmp-scope">Respects the filters above \u00b7 ${fmtNum(a.length)} vs ${fmtNum(b.length)} dispatches in scope</span>`;
   const completedToggle = `<span class="muted">Dispatch status</span><div class="btn-group" data-cmp="completed"><button class="toggle ${!completedOnly ? "active" : ""}" data-opt="all">All</button><button class="toggle ${completedOnly ? "active" : ""}" data-opt="completed">Completed only</button></div>`;
   const pickers = `<div class="card"><div class="cmp-pickers"><span class="muted">Compare</span><select id="cmpA" class="geo-select cmp-a">${opt(A)}</select>${locA}<span class="muted">vs</span><select id="cmpB" class="geo-select cmp-b">${opt(B)}</select>${locB}</div><div class="cmp-pickers" style="margin-top:10px">${completedToggle}${hint}</div></div>`;
 
@@ -817,13 +817,13 @@ function onCmpToggle(e) { const grp = e.target.closest("[data-cmp]"), btn = e.ta
 
 /* ---------------- shell ---------------- */
 const PAGES = [
-  { id: "overview", label: "Overview", icon: "◎", fn: renderOverview },
-  { id: "performance", label: "Response Performance", icon: "⏱", fn: renderPerformance },
-  { id: "patterns", label: "Demand Patterns", icon: "📊", fn: renderPatterns },
-  { id: "events", label: "Event Analysis", icon: "🧭", fn: renderEvents },
-  { id: "comparison", label: "Comparison", icon: "⚖", fn: renderComparison },
-  { id: "explorer", label: "Dispatch Explorer", icon: "🔎", fn: renderExplorer },
-  { id: "quality", label: "Data Quality", icon: "✓", fn: renderQuality },
+  { id: "overview", label: "Overview", icon: "\u25ce", fn: renderOverview },
+  { id: "performance", label: "Response Performance", icon: "\u23f1", fn: renderPerformance },
+  { id: "patterns", label: "Demand Patterns", icon: "\ud83d\udcca", fn: renderPatterns },
+  { id: "events", label: "Event Analysis", icon: "\ud83e\udded", fn: renderEvents },
+  { id: "comparison", label: "Comparison", icon: "\u2696", fn: renderComparison },
+  { id: "explorer", label: "Dispatch Explorer", icon: "\ud83d\udd0e", fn: renderExplorer },
+  { id: "quality", label: "Data Quality", icon: "\u2713", fn: renderQuality },
 ];
 let STATE = { headers: [], allRecords: [], records: [], page: "overview", widgets: {}, range: "all", location: "all", maxDate: null, loaded: false, cmpA: null, cmpB: null, cmpLocA: "all", cmpLocB: "all", cmp: { time: "month", tod: "hour", completed: "all" } };
 
@@ -876,11 +876,11 @@ function onRangeInput(e) {
   applyFilters(); updateSubtitle(); renderContent();
 }
 function updateSubtitle() {
-  const label = STATE.range === "all" ? "all time" : STATE.range === "12m" ? "last 12 months" : STATE.range === "6m" ? "last 6 months" : STATE.range === "30d" ? "last 30 days" : `${STATE.customFrom || "…"} → ${STATE.customTo || "…"}`;
+  const label = STATE.range === "all" ? "all time" : STATE.range === "12m" ? "last 12 months" : STATE.range === "6m" ? "last 6 months" : STATE.range === "30d" ? "last 30 days" : `${STATE.customFrom || "\u2026"} \u2192 ${STATE.customTo || "\u2026"}`;
   const filtered = STATE.range !== "all" || STATE.location !== "all";
   const extra = filtered ? ` of ${fmtNum(STATE.allRecords.length)}` : "";
-  const geo = STATE.location !== "all" ? ` · ${locationLabel()}` : "";
-  document.getElementById("subtitle").textContent = `${fmtNum(STATE.records.length)}${extra} dispatches · ${label}${geo} · autonomous fleet-response operations`;
+  const geo = STATE.location !== "all" ? ` \u00b7 ${locationLabel()}` : "";
+  document.getElementById("subtitle").textContent = `${fmtNum(STATE.records.length)}${extra} dispatches \u00b7 ${label}${geo} \u00b7 autonomous fleet-response operations`;
 }
 function locationLabel() { const o = locationOptions().find((x) => x.label.toLowerCase() === STATE.location); return o ? o.label : STATE.location; }
 function onRange(e) {
@@ -894,17 +894,17 @@ function renderNav() {
   document.querySelectorAll(".nav-link").forEach((el) => el.addEventListener("click", () => { STATE.page = el.dataset.page; renderNav(); renderContent(); }));
 }
 function renderContent() { if (!STATE.loaded) { showUpload(); return; } document.getElementById("content").innerHTML = (PAGES.find((p) => p.id === STATE.page) || PAGES[0]).fn(); }
-function renderFileControls() { const el = document.getElementById("fileControls"); if (el) el.innerHTML = STATE.loaded ? `<button id="newFileBtn" title="Load a different CSV">↺ New CSV</button>` : ""; }
+function renderFileControls() { const el = document.getElementById("fileControls"); if (el) el.innerHTML = STATE.loaded ? `<button id="newFileBtn" title="Load a different CSV">\u21ba New CSV</button>` : ""; }
 
 /* ---------------- upload flow ---------------- */
 function showUpload(err) {
   STATE.loaded = false;
   ["rangeControls", "geoControls", "fileControls"].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ""; });
-  const sub = document.getElementById("subtitle"); if (sub) sub.textContent = "Upload a CSV to begin — your file stays in your browser";
+  const sub = document.getElementById("subtitle"); if (sub) sub.textContent = "Upload a CSV to begin \u2014 your file stays in your browser";
   document.getElementById("nav").innerHTML = "";
   document.getElementById("content").innerHTML = `
     <div class="upload-wrap"><div class="dropzone" id="dropzone">
-      <div class="dz-icon">⬆</div>
+      <div class="dz-icon">\u2b06</div>
       <div class="dz-title">Drop your CSV here</div>
       <div class="dz-sub">or</div>
       <button class="btn-primary-lg" id="pickBtn">Choose CSV file</button>
