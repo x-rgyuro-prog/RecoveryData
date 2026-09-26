@@ -703,8 +703,8 @@ function renderNav() {
   document.getElementById("nav").innerHTML = PAGES.map((p) => `<div class="nav-link ${p.id === STATE.page ? "active" : ""}" data-page="${p.id}"><span class="nav-icon">${p.icon}</span>${p.label}</div>`).join("");
   document.querySelectorAll(".nav-link").forEach((el) => el.addEventListener("click", () => { STATE.page = el.dataset.page; renderNav(); renderContent(); }));
 }
-function renderContent() { if (!STATE.loaded) { showUpload(); return; } document.getElementById("content").innerHTML = (PAGES.find((p) => p.id === STATE.page) || PAGES[0]).fn(); }
-function renderFileControls() { const el = document.getElementById("fileControls"); if (el) el.innerHTML = STATE.loaded ? `<button id="newFileBtn" title="Load a different CSV">↺ New CSV</button>` : ""; }
+function renderContent() { if (!STATE.loaded) { if (!window.__SUPPRESS_UPLOAD__) showUpload(); return; } document.getElementById("content").innerHTML = (PAGES.find((p) => p.id === STATE.page) || PAGES[0]).fn(); }
+function renderFileControls() { const el = document.getElementById("fileControls"); if (!el) return; el.innerHTML = (STATE.loaded && !window.__SUPPRESS_UPLOAD__) ? `<button id="newFileBtn" title="Load a different CSV">↺ New CSV</button>` : ""; }
 
 /* ---------------- upload flow ---------------- */
 function showUpload(err) {
@@ -773,6 +773,9 @@ async function init() {
   if (csv && !csv.includes("://") && !csv.startsWith("//") && !csv.startsWith("/")) {
     try { const res = await fetch(csv, { cache: "no-store" }); if (res.ok) { boot(await res.text()); applyUrlState(params); return; } } catch (e) { /* fall through to upload */ }
   }
+  // Hosts that provide data externally (e.g. Apps Script) set __SUPPRESS_UPLOAD__
+  // so the upload screen never renders; they call boot() with the data instead.
+  if (window.__SUPPRESS_UPLOAD__) { window.__READY__ = true; return; }
   showUpload();
   window.__READY__ = true;
 }
