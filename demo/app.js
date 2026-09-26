@@ -79,11 +79,11 @@ const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 function median(a) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 function percentile(a, p) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))]; }
 function pctTrue(k) { const v = cleaned(k).map((x) => x.toUpperCase()); const t = v.filter((x) => x === "TRUE").length, f = v.filter((x) => x === "FALSE").length; return t + f ? (t / (t + f)) * 100 : 0; }
-// Of dispatches with riders onboard, share where riders were recovered/assisted
-// (Riders Recovered is anything other than FALSE/blank: TRUE, Uber Voucher, Egressed/Walked away).
+// Of dispatches with riders onboard, share where riders were actually recovered
+// (Riders Recovered == TRUE only; excludes Uber Voucher and Egressed/Walked away).
 function riderRecoveryRate(recs) {
   const onboard = recs.filter((r) => clean(r[H.ridersIn]).toUpperCase() === "TRUE").length;
-  const recovered = recs.filter((r) => { const v = clean(r[H.ridersRec]); return v && v.toUpperCase() !== "FALSE"; }).length;
+  const recovered = recs.filter((r) => clean(r[H.ridersRec]).toUpperCase() === "TRUE").length;
   return { onboard, recovered, rate: onboard ? (recovered / onboard) * 100 : 0 };
 }
 
@@ -435,7 +435,7 @@ function buildKpis() {
     ["Median On-Scene", fmtMin(median(posNums(H.mOnScene))), "Time working the scene"],
     ["L0 False-Positive Rate", fmtPct(tp + fp ? (fp / (tp + fp)) * 100 : 0), `${fmtNum(fp)} FP of ${fmtNum(tp + fp)} L0s`],
     ["Riders Onboard", fmtPct(pctTrue(H.ridersIn)), "Dispatches with riders in the VH6"],
-    ["Rider Recovery Rate", fmtPct(rr.rate), `${fmtNum(rr.recovered)} of ${fmtNum(rr.onboard)} rider-onboard dispatches recovered/assisted`],
+    ["Rider Recovery Rate", fmtPct(rr.rate), `${fmtNum(rr.recovered)} of ${fmtNum(rr.onboard)} rider-onboard dispatches recovered`],
     ["Avg Deadhead", fmtPct(mean(deadhead) * 100), "Non-productive travel share"],
   ];
   return `<div class="grid kpi-grid">${cards.map((c, i) => kpi(c[0], c[1], c[2], i)).join("")}</div>`;
