@@ -42,7 +42,7 @@ const H = {
   date: "Date Created", vh6: "VH6 # (eg. vh6b_000 or vh6d_000)", status: "Status", type: "Dispatch Type",
   l0: "True or False Positive (L0s ONLY)", reason: "Reason for Event", milestone: "ZR# (Milestone)",
   assignee: "Assignee", action: "Was the vehicle Towed, Rovebotted, Inspected, Tailed or RTB/Auto",
-  location: "Location", supervisor: "Supervisor", ridersIn: "Riders in The VH6", day: "Day", hour: "24hr",
+  location: "Location", supervisor: "Supervisor", ridersIn: "Riders in The VH6", ridersRec: "Riders Recovered", day: "Day", hour: "24hr",
   mCreatedAccept: "created_to_accepted_min", mAcceptArrive: "accepted_to_arrived_min",
   mDispatchArrive: "dispatch_to_arrived_on_scene_mins", mOnScene: "on_scene_work_mins",
   mReturn: "return_to_base_mins", mTurnaround: "turnaround_time_mins", deadhead: "deadhead_percentage",
@@ -79,6 +79,13 @@ const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 function median(a) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 function percentile(a, p) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))]; }
 function pctTrue(k) { const v = cleaned(k).map((x) => x.toUpperCase()); const t = v.filter((x) => x === "TRUE").length, f = v.filter((x) => x === "FALSE").length; return t + f ? (t / (t + f)) * 100 : 0; }
+// Of dispatches with riders onboard, share where riders were recovered/assisted
+// (Riders Recovered is anything other than FALSE/blank: TRUE, Uber Voucher, Egressed/Walked away).
+function riderRecoveryRate(recs) {
+  const onboard = recs.filter((r) => clean(r[H.ridersIn]).toUpperCase() === "TRUE").length;
+  const recovered = recs.filter((r) => { const v = clean(r[H.ridersRec]); return v && v.toUpperCase() !== "FALSE"; }).length;
+  return { onboard, recovered, rate: onboard ? (recovered / onboard) * 100 : 0 };
+}
 
 function aggByCategory(catKey, numKey, limit, agg) {
   const groups = new Map();
@@ -419,6 +426,7 @@ function buildKpis() {
   const completed = (counts(H.status).find((s) => /complete/i.test(s.label)) || { count: 0 }).count;
   const l0 = cleaned(H.l0), fp = l0.filter((v) => /false positive/i.test(v)).length, tp = l0.filter((v) => /true positive/i.test(v)).length;
   const turn = posNums(H.mTurnaround), deadhead = nums(H.deadhead).filter((n) => n >= 0);
+  const rr = riderRecoveryRate(STATE.records);
   const cards = [
     ["Total Dispatches", fmtNum(total), "Fleet-response events"],
     ["Completion Rate", fmtPct((completed / total) * 100), `${fmtNum(completed)} completed · ${fmtNum(total - completed)} cancelled`],
@@ -427,6 +435,7 @@ function buildKpis() {
     ["Median On-Scene", fmtMin(median(posNums(H.mOnScene))), "Time working the scene"],
     ["L0 False-Positive Rate", fmtPct(tp + fp ? (fp / (tp + fp)) * 100 : 0), `${fmtNum(fp)} FP of ${fmtNum(tp + fp)} L0s`],
     ["Riders Onboard", fmtPct(pctTrue(H.ridersIn)), "Dispatches with riders in the VH6"],
+    ["Rider Recovery Rate", fmtPct(rr.rate), `${fmtNum(rr.recovered)} of ${fmtNum(rr.onboard)} rider-onboard dispatches recovered/assisted`],
     ["Avg Deadhead", fmtPct(mean(deadhead) * 100), "Non-productive travel share"],
   ];
   return `<div class="grid kpi-grid">${cards.map((c, i) => kpi(c[0], c[1], c[2], i)).join("")}</div>`;
@@ -496,10 +505,12 @@ function metricsFor(recs) {
   const fp = l0.filter((v) => /false positive/i.test(v)).length, tp = l0.filter((v) => /true positive/i.test(v)).length;
   const dead = recs.map((r) => toNum(r[H.deadhead])).filter((n) => n !== null && n >= 0);
   const riders = recs.map((r) => clean(r[H.ridersIn]).toUpperCase()).filter((v) => v === "TRUE" || v === "FALSE");
+  const rr = riderRecoveryRate(recs);
   return {
     total, completionRate: total ? (completed / total) * 100 : 0, medianTurn: median(turn), medianResp: median(resp),
     medianOns: median(ons), l0fp: tp + fp ? (fp / (tp + fp)) * 100 : 0, deadhead: mean(dead) * 100,
     riders: riders.length ? (riders.filter((v) => v === "TRUE").length / riders.length) * 100 : 0,
+    riderRec: rr.rate,
   };
 }
 function seriesOf(recs, mode, valueFn) {
@@ -563,7 +574,7 @@ function groupedBarV(cats, aVals, bVals, nameA, nameB, rotate) {
 function cmpCard(title, sub, controls, body) { return `<div class="card"><div class="card-head"><div><h3 class="card-title">${esc(title)}</h3>${sub ? `<div class="card-sub">${esc(sub)}</div>` : ""}</div>${controls ? `<div class="controls">${controls}</div>` : ""}</div>${body}</div>`; }
 function cmpKpisCard(a, b, A, B) {
   const mA = metricsFor(a), mB = metricsFor(b);
-  const rows = [["Total Dispatches", fmtNum(mA.total), fmtNum(mB.total)], ["Completion Rate", fmtPct(mA.completionRate), fmtPct(mB.completionRate)], ["Median Turnaround", fmtMin(mA.medianTurn), fmtMin(mB.medianTurn)], ["Median Response", fmtMin(mA.medianResp), fmtMin(mB.medianResp)], ["Median On-Scene", fmtMin(mA.medianOns), fmtMin(mB.medianOns)], ["L0 False-Positive Rate", fmtPct(mA.l0fp), fmtPct(mB.l0fp)], ["Avg Deadhead", fmtPct(mA.deadhead), fmtPct(mB.deadhead)], ["Riders Onboard", fmtPct(mA.riders), fmtPct(mB.riders)]];
+  const rows = [["Total Dispatches", fmtNum(mA.total), fmtNum(mB.total)], ["Completion Rate", fmtPct(mA.completionRate), fmtPct(mB.completionRate)], ["Median Turnaround", fmtMin(mA.medianTurn), fmtMin(mB.medianTurn)], ["Median Response", fmtMin(mA.medianResp), fmtMin(mB.medianResp)], ["Median On-Scene", fmtMin(mA.medianOns), fmtMin(mB.medianOns)], ["L0 False-Positive Rate", fmtPct(mA.l0fp), fmtPct(mB.l0fp)], ["Avg Deadhead", fmtPct(mA.deadhead), fmtPct(mB.deadhead)], ["Riders Onboard", fmtPct(mA.riders), fmtPct(mB.riders)], ["Rider Recovery Rate", fmtPct(mA.riderRec), fmtPct(mB.riderRec)]];
   const body = `<div class="table-wrap"><table class="data"><thead><tr><th>Metric</th><th style="color:${CMP_A}">${esc(A)}</th><th style="color:${CMP_B}">${esc(B)}</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</tbody></table></div>`;
   return `<div class="card span-2"><h3 class="card-title">KPI Comparison</h3><div class="card-sub">${esc(A)} vs ${esc(B)} — within the current time range &amp; location filters</div>${body}</div>`;
 }
