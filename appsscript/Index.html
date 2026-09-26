@@ -26,7 +26,7 @@
       <div class="topbar">
         <div>
           <h1 class="page-title">Fleet Response Dashboard</h1>
-          <div class="page-subtitle" id="subtitle">Loading dashboard... [build v4]</div>
+          <div class="page-subtitle" id="subtitle">Loading dashboard... [build v5]</div>
         </div>
         <div class="header-controls">
           <div class="controls" id="rangeControls"></div>
@@ -34,7 +34,7 @@
           <div id="fileControls"></div>
         </div>
       </div>
-      <div id="content"></div>
+      <div id="content" style="visibility: hidden"></div>
     </main>
   </div>
   <input type="file" id="fileInput" accept=".csv,text/csv" style="display: none" />
@@ -100,7 +100,11 @@
         .withSuccessHandler(function (values) {
           if (values && values.error) { __err(values.error); return; }
           if (!values || values.length < 2) { __err("Sheet is empty or missing headers."); return; }
-          __whenBootReady(function () { boot(__toCSV(values)); });
+          __whenBootReady(function () {
+            boot(__toCSV(values));
+            var ct = document.getElementById("content");
+            if (ct) ct.style.visibility = "visible";   // reveal only once the dashboard is rendered
+          });
         })
         .withFailureHandler(function (e) { __err(e && e.message ? e.message : e); })
         .getDashboardData();
@@ -111,8 +115,10 @@
           __injectCss(cssB64);
           google.script.run
             .withSuccessHandler(function (appB64) {
-              __injectApp(appB64);   // defines boot() (may run a tick later)
-              __loadData();          // waits for boot() to exist, then renders
+              __injectApp(appB64);   // defines boot() (its upload screen renders into the hidden #content)
+              var sub = document.getElementById("subtitle");
+              if (sub) sub.textContent = "Loading dashboard... [build v5]";  // undo the app's "upload a CSV" subtitle
+              __loadData();          // waits for boot() to exist, then renders + reveals #content
             })
             .withFailureHandler(function (e) { __err("app load: " + (e && e.message ? e.message : e)); })
             .getAppJs();
