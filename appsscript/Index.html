@@ -69,14 +69,20 @@
       var s = document.getElementById("subtitle");
       if (s) { s.textContent = "Error: " + msg; s.style.color = "#ff6b8b"; }
     }
-    function __injectCss(css) {
+    function __b64ToStr(b64) {
+      var bin = atob(String(b64).replace(/\s+/g, ""));
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder("utf-8").decode(bytes); // UTF-8 safe (emoji etc.)
+    }
+    function __injectCss(b64) {
       var st = document.createElement("style");
-      st.textContent = css || "";
+      st.textContent = __b64ToStr(b64);
       document.head.appendChild(st);
     }
-    function __injectApp(src) {
+    function __injectApp(b64) {
       var sc = document.createElement("script");
-      sc.textContent = src;   // executed as JS; backticks are safe here
+      sc.textContent = __b64ToStr(b64);   // executed as JS; backticks/emoji safe
       document.body.appendChild(sc);
     }
     function __loadData() {
