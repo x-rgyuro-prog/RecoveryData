@@ -79,11 +79,13 @@ const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 function median(a) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 function percentile(a, p) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))]; }
 function pctTrue(k) { const v = cleaned(k).map((x) => x.toUpperCase()); const t = v.filter((x) => x === "TRUE").length, f = v.filter((x) => x === "FALSE").length; return t + f ? (t / (t + f)) * 100 : 0; }
-// Of dispatches with riders onboard, share where riders were actually recovered
-// (Riders Recovered == TRUE only; excludes Uber Voucher and Egressed/Walked away).
+// Of dispatches with riders onboard (Riders in VH6 == TRUE), share where riders
+// were actually recovered (Riders Recovered == TRUE). The numerator requires
+// BOTH to be TRUE so it's a strict subset of the denominator (excludes Uber
+// Voucher / Egressed, and rows marked recovered without riders onboard).
 function riderRecoveryRate(recs) {
   const onboard = recs.filter((r) => clean(r[H.ridersIn]).toUpperCase() === "TRUE").length;
-  const recovered = recs.filter((r) => clean(r[H.ridersRec]).toUpperCase() === "TRUE").length;
+  const recovered = recs.filter((r) => clean(r[H.ridersIn]).toUpperCase() === "TRUE" && clean(r[H.ridersRec]).toUpperCase() === "TRUE").length;
   return { onboard, recovered, rate: onboard ? (recovered / onboard) * 100 : 0 };
 }
 
