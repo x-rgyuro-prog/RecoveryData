@@ -85,27 +85,27 @@
       sc.textContent = __b64ToStr(b64);   // executed as JS; backticks/emoji safe
       document.body.appendChild(sc);
     }
-    function __loadData() {
-      google.script.run
-        .withSuccessHandler(function (values) {
-          if (values && values.error) { __err(values.error); return; }
-          if (!values || values.length < 2) { __err("Sheet is empty or missing headers."); return; }
-          boot(__toCSV(values));   // boot() comes from the injected app.js
-        })
-        .withFailureHandler(function (e) { __err(e && e.message ? e.message : e); })
-        .getDashboardData();
-    }
+    // Order matters: fetch styles, then DATA, then the app code. We inject the
+    // app and call boot(data) in the SAME synchronous step, so the app's
+    // "upload a CSV" screen is never painted (no flash).
     window.addEventListener("load", function () {
       google.script.run
-        .withSuccessHandler(function (css) {
-          __injectCss(css);
+        .withSuccessHandler(function (cssB64) {
+          __injectCss(cssB64);
           google.script.run
-            .withSuccessHandler(function (src) {
-              __injectApp(src);   // defines boot(); app shows its upload screen briefly
-              __loadData();       // then live data replaces it
+            .withSuccessHandler(function (values) {
+              if (values && values.error) { __err(values.error); return; }
+              if (!values || values.length < 2) { __err("Sheet is empty or missing headers."); return; }
+              google.script.run
+                .withSuccessHandler(function (appB64) {
+                  __injectApp(appB64);      // defines boot() (app init runs, but...)
+                  boot(__toCSV(values));    // ...we render live data in the same tick
+                })
+                .withFailureHandler(function (e) { __err("app load: " + (e && e.message ? e.message : e)); })
+                .getAppJs();
             })
-            .withFailureHandler(function (e) { __err("app load: " + (e && e.message ? e.message : e)); })
-            .getAppJs();
+            .withFailureHandler(function (e) { __err(e && e.message ? e.message : e); })
+            .getDashboardData();
         })
         .withFailureHandler(function (e) { __err("css load: " + (e && e.message ? e.message : e)); })
         .getCss();
