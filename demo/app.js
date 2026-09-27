@@ -112,10 +112,12 @@ function isoWeek(d) { const date = new Date(Date.UTC(d.getFullYear(), d.getMonth
 const DOW = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 function dayOfWeek() { const m = new Map(); cleaned(H.day).forEach((v) => m.set(v, (m.get(v) || 0) + 1)); return DOW.filter((d) => m.has(d)).map((d) => ({ label: d.slice(0, 3), count: m.get(d) })); }
 function weekdayWeekend() { let wd = 0, we = 0; cleaned(H.day).forEach((d) => { if (d === "Saturday" || d === "Sunday") we++; else wd++; }); return [{ label: "Weekday", count: wd }, { label: "Weekend", count: we }]; }
-function hourOfDay() { const m = new Map(); cleaned(H.hour).forEach((v) => { const n = Number(v); if (Number.isFinite(n)) { const k = String(n).padStart(2, "0"); m.set(k, (m.get(k) || 0) + 1); } }); return [...m.keys()].sort().map((k) => ({ label: k, count: m.get(k) })); }
-function partOfDay() {
+function recordsByDay(day) { return !day || day === "all" ? STATE.records : STATE.records.filter((r) => clean(r[H.day]) === day); }
+function hourValues(recs) { return (recs || STATE.records).map((r) => clean(r[H.hour])).filter((v) => v !== ""); }
+function hourOfDay(recs) { const m = new Map(); hourValues(recs).forEach((v) => { const n = Number(v); if (Number.isFinite(n)) { const k = String(n).padStart(2, "0"); m.set(k, (m.get(k) || 0) + 1); } }); return [...m.keys()].sort().map((k) => ({ label: k, count: m.get(k) })); }
+function partOfDay(recs) {
   const b = { Overnight: 0, Morning: 0, Afternoon: 0, Evening: 0 };
-  cleaned(H.hour).forEach((v) => { const n = Number(v); if (!Number.isFinite(n)) return; if (n <= 5) b.Overnight++; else if (n <= 11) b.Morning++; else if (n <= 17) b.Afternoon++; else b.Evening++; });
+  hourValues(recs).forEach((v) => { const n = Number(v); if (!Number.isFinite(n)) return; if (n <= 5) b.Overnight++; else if (n <= 11) b.Morning++; else if (n <= 17) b.Afternoon++; else b.Evening++; });
   return Object.entries(b).map(([label, count]) => ({ label, count }));
 }
 /* completion vs cancellation share per category (inspired by ZR ComplCancel% tabs) */
@@ -247,14 +249,22 @@ function histogramSvg(values, capPct, colr) {
 
 function heatmap(metric) {
   const grid = dayHourAgg(metric), days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], max = Math.max(1, ...grid.flat());
-  const W = 560, padL = 42, padT = 24, right = 12, cw = (W - padL - right) / 24, ch = 28, Ht = padT + 7 * ch + 34;
+  const W = 560, padL = 42, padT = 24, right = 12, cw = (W - padL - right) / 24, ch = 28, Ht = padT + 7 * ch + 60;
   let cells = "", labels = "";
   for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) { const v = grid[d][h], x = padL + h * cw, y = padT + d * ch; cells += `<rect x="${x.toFixed(1)}" y="${y}" width="${(cw - 1.5).toFixed(1)}" height="${ch - 2}" rx="2" fill="${v > 0 ? heatColor(v / max) : "#0e1428"}"/>`; }
   days.forEach((d, i) => (labels += `<text x="${padL - 6}" y="${padT + i * ch + ch / 2 + 3}" fill="#9aa7c2" font-size="10" text-anchor="end">${d}</text>`));
   for (let h = 0; h < 24; h += 3) labels += `<text x="${(padL + h * cw + cw / 2).toFixed(1)}" y="${padT - 8}" fill="#9aa7c2" font-size="9" text-anchor="middle">${String(h).padStart(2, "0")}</text>`;
-  const ly = padT + 7 * ch + 16; let leg = "";
-  for (let i = 0; i < 40; i++) leg += `<rect x="${padL + i * 4}" y="${ly}" width="4" height="8" fill="${heatColor(i / 39)}"/>`;
-  leg += `<text x="${padL - 6}" y="${ly + 8}" fill="#9aa7c2" font-size="9" text-anchor="end">low</text><text x="${padL + 40 * 4 + 6}" y="${ly + 8}" fill="#9aa7c2" font-size="9">high (${metric === "turnaround" ? Math.round(max) + "m" : fmtNum(max)})</text>`;
+  // Larger gradient legend with numeric ticks (~every 5, scaled to a nice step).
+  const legX = padL, legW = 320, legH = 16, legY = padT + 7 * ch + 20;
+  let leg = "";
+  for (let i = 0; i < legW; i++) leg += `<rect x="${(legX + i).toFixed(1)}" y="${legY}" width="1.1" height="${legH}" fill="${heatColor(i / (legW - 1))}"/>`;
+  const step = (function (m) { const c = [5, 10, 15, 20, 25, 50, 100, 200, 500, 1000]; for (let k = 0; k < c.length; k++) if (m / c[k] <= 10) return c[k]; return Math.ceil(m / 10 / 1000) * 1000; })(max);
+  for (let val = 0; val <= max + 0.0001; val += step) {
+    const tx = legX + (val / max) * legW;
+    leg += `<line x1="${tx.toFixed(1)}" y1="${legY}" x2="${tx.toFixed(1)}" y2="${(legY + legH + 4).toFixed(1)}" stroke="#9aa7c2" stroke-width="1"/>`;
+    leg += `<text x="${tx.toFixed(1)}" y="${(legY + legH + 16).toFixed(1)}" fill="#9aa7c2" font-size="10" text-anchor="middle">${metric === "turnaround" ? Math.round(val) : fmtNum(val)}</text>`;
+  }
+  leg += `<text x="${(legX + legW + 10).toFixed(1)}" y="${(legY + legH).toFixed(1)}" fill="#9aa7c2" font-size="10">${metric === "turnaround" ? "min" : "dispatches"}</text>`;
   return svg(cells + labels + leg, W, Ht);
 }
 function scatterChart(yKey, yLabel) {
@@ -302,10 +312,14 @@ const WIDGETS = {
     render(s) { return catChart(counts(H.status), s.view, "dispatches"); },
   },
   hour: {
-    title: "Dispatches by Time of Day", defaults: { view: "column", group: "hour" },
-    controls: [{ group: "view", opts: [["column", "Bar"], ["pie", "Pie"]] }, { group: "group", opts: [["hour", "By hour"], ["part", "Part of day"]] }],
-    sub: (s) => (s.group === "part" ? "Overnight / Morning / Afternoon / Evening" : "24-hour demand curve"),
-    render(s) { const items = s.group === "part" ? partOfDay() : hourOfDay(); return s.view === "pie" ? pie(items, "dispatches", true) : barV(items, color(4), s.group === "hour"); },
+    title: "Dispatches by Time of Day", defaults: { view: "column", group: "hour", day: "all" },
+    controls: [
+      { group: "view", opts: [["column", "Bar"], ["pie", "Pie"]] },
+      { group: "group", opts: [["hour", "By hour"], ["part", "Part of day"]] },
+      { group: "day", type: "select", opts: [["all", "All days"]].concat(DOW.map((d) => [d, d])) },
+    ],
+    sub: (s) => (s.day && s.day !== "all" ? s.day + " \u00b7 " : "") + (s.group === "part" ? "Overnight / Morning / Afternoon / Evening" : "24-hour demand curve"),
+    render(s) { const recs = recordsByDay(s.day); const items = s.group === "part" ? partOfDay(recs) : hourOfDay(recs); return s.view === "pie" ? pie(items, "dispatches", true) : barV(items, color(4), s.group === "hour"); },
   },
   dow: {
     title: "Dispatches by Day", defaults: { view: "column", group: "day" },
@@ -404,7 +418,12 @@ const WIDGETS = {
 function widgetCard(id, cls) {
   const w = WIDGETS[id];
   const st = STATE.widgets[id] || (STATE.widgets[id] = { ...w.defaults });
-  const controls = w.controls.map((cg) => `<div class="btn-group" data-widget="${id}" data-group="${cg.group}">${cg.opts.map(([opt, label]) => `<button class="toggle ${st[cg.group] === opt ? "active" : ""}" data-opt="${opt}">${esc(label)}</button>`).join("")}</div>`).join("");
+  const controls = w.controls.map((cg) => {
+    if (cg.type === "select") {
+      return `<select class="geo-select" data-widget="${id}" data-wgroup="${cg.group}">${cg.opts.map(([v, label]) => `<option value="${esc(v)}"${st[cg.group] === v ? " selected" : ""}>${esc(label)}</option>`).join("")}</select>`;
+    }
+    return `<div class="btn-group" data-widget="${id}" data-group="${cg.group}">${cg.opts.map(([opt, label]) => `<button class="toggle ${st[cg.group] === opt ? "active" : ""}" data-opt="${opt}">${esc(label)}</button>`).join("")}</div>`;
+  }).join("");
   const sub = typeof w.sub === "function" ? w.sub(st) : w.sub;
   return `<div class="card ${cls || ""}"><div class="card-head"><div><h3 class="card-title">${esc(w.title)}</h3>${sub ? `<div class="card-sub">${esc(sub)}</div>` : ""}</div><div class="controls">${controls}</div></div><div class="widget-body" data-widget-body="${id}">${w.render(st)}</div></div>`;
 }
@@ -416,6 +435,17 @@ function onToggle(e) {
   STATE.widgets[id][group] = opt;
   grp.querySelectorAll(".toggle").forEach((b) => b.classList.toggle("active", b === btn));
   const card = grp.closest(".card");
+  const body = card.querySelector(`[data-widget-body="${id}"]`);
+  if (body) body.innerHTML = w.render(STATE.widgets[id]);
+  if (typeof w.sub === "function") { const subEl = card.querySelector(".card-sub"); if (subEl) subEl.textContent = w.sub(STATE.widgets[id]); }
+}
+function onWidgetSelect(e) {
+  const sel = e.target;
+  if (sel.tagName !== "SELECT" || !sel.dataset.widget || !sel.dataset.wgroup) return;
+  const id = sel.dataset.widget, group = sel.dataset.wgroup, w = WIDGETS[id];
+  if (!w) return;
+  STATE.widgets[id][group] = sel.value;
+  const card = sel.closest(".card");
   const body = card.querySelector(`[data-widget-body="${id}"]`);
   if (body) body.innerHTML = w.render(STATE.widgets[id]);
   if (typeof w.sub === "function") { const subEl = card.querySelector(".card-sub"); if (subEl) subEl.textContent = w.sub(STATE.widgets[id]); }
@@ -775,6 +805,7 @@ async function init() {
   document.addEventListener("change", onRangeInput);
   document.addEventListener("change", onGeo);
   document.addEventListener("change", onCmp);
+  document.addEventListener("change", onWidgetSelect);
   document.getElementById("fileInput").addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (f) readFile(f); e.target.value = ""; });
   document.addEventListener("click", (e) => { if (e.target.id === "newFileBtn") showUpload(); });
 
