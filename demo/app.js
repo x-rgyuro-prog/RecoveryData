@@ -451,7 +451,7 @@ function renderPerformance() {
   const hist = histogramSvg(posNums(H.mTurnaround), 95, color(2));
   return `<div class="grid chart-grid">${widgetCard("lifecycle", "span-2")}${widgetCard("turnTrend")}${staticCard("Turnaround Distribution", `Minutes, capped at 95th pct (${Math.round(hist.cap)} min)`, hist.svg)}${widgetCard("scatter")}${widgetCard("turnLoc")}${widgetCard("turnType")}</div>`;
 }
-function renderPatterns() { return `<div class="grid chart-grid">${widgetCard("heat", "span-2")}${widgetCard("hour")}${widgetCard("dow")}${widgetCard("location")}${widgetCard("milestone")}</div>`; }
+function renderPatterns() { return `<div class="grid chart-grid">${widgetCard("heat", "span-2")}${widgetCard("hour", "span-2")}${widgetCard("dow")}${widgetCard("location")}${widgetCard("milestone")}</div>`; }
 function renderEvents() { return `<div class="grid chart-grid">${widgetCard("reason", "span-2")}${widgetCard("l0")}${widgetCard("resolution")}${widgetCard("crew")}${widgetCard("supervisor")}</div>`; }
 
 const EXPLORER_COLS = [H.date, H.vh6, H.status, H.type, H.reason, H.location, H.assignee, H.action, H.mDispatchArrive, H.mTurnaround, H.ridersIn];
