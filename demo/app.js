@@ -42,7 +42,7 @@ const H = {
   date: "Date Created", vh6: "VH6 # (eg. vh6b_000 or vh6d_000)", status: "Status", type: "Dispatch Type",
   l0: "True or False Positive (L0s ONLY)", reason: "Reason for Event", milestone: "ZR# (Milestone)",
   assignee: "Assignee", action: "Was the vehicle Towed, Rovebotted, Inspected, Tailed or RTB/Auto",
-  location: "Location", supervisor: "Supervisor", ridersIn: "Riders in The VH6", day: "Day", hour: "24hr",
+  location: "Location", supervisor: "Supervisor", ridersIn: "Riders in The VH6", ridersRec: "Riders Recovered", day: "Day", hour: "24hr",
   mCreatedAccept: "created_to_accepted_min", mAcceptArrive: "accepted_to_arrived_min",
   mDispatchArrive: "dispatch_to_arrived_on_scene_mins", mOnScene: "on_scene_work_mins",
   mReturn: "return_to_base_mins", mTurnaround: "turnaround_time_mins", deadhead: "deadhead_percentage",
@@ -79,6 +79,15 @@ const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 function median(a) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 function percentile(a, p) { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))]; }
 function pctTrue(k) { const v = cleaned(k).map((x) => x.toUpperCase()); const t = v.filter((x) => x === "TRUE").length, f = v.filter((x) => x === "FALSE").length; return t + f ? (t / (t + f)) * 100 : 0; }
+// Of dispatches with riders onboard (Riders in VH6 == TRUE), share where riders
+// were actually recovered (Riders Recovered == TRUE). The numerator requires
+// BOTH to be TRUE so it's a strict subset of the denominator (excludes Uber
+// Voucher / Egressed, and rows marked recovered without riders onboard).
+function riderRecoveryRate(recs) {
+  const onboard = recs.filter((r) => clean(r[H.ridersIn]).toUpperCase() === "TRUE").length;
+  const recovered = recs.filter((r) => clean(r[H.ridersIn]).toUpperCase() === "TRUE" && clean(r[H.ridersRec]).toUpperCase() === "TRUE").length;
+  return { onboard, recovered, rate: onboard ? (recovered / onboard) * 100 : 0 };
+}
 
 function aggByCategory(catKey, numKey, limit, agg) {
   const groups = new Map();
@@ -103,10 +112,12 @@ function isoWeek(d) { const date = new Date(Date.UTC(d.getFullYear(), d.getMonth
 const DOW = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 function dayOfWeek() { const m = new Map(); cleaned(H.day).forEach((v) => m.set(v, (m.get(v) || 0) + 1)); return DOW.filter((d) => m.has(d)).map((d) => ({ label: d.slice(0, 3), count: m.get(d) })); }
 function weekdayWeekend() { let wd = 0, we = 0; cleaned(H.day).forEach((d) => { if (d === "Saturday" || d === "Sunday") we++; else wd++; }); return [{ label: "Weekday", count: wd }, { label: "Weekend", count: we }]; }
-function hourOfDay() { const m = new Map(); cleaned(H.hour).forEach((v) => { const n = Number(v); if (Number.isFinite(n)) { const k = String(n).padStart(2, "0"); m.set(k, (m.get(k) || 0) + 1); } }); return [...m.keys()].sort().map((k) => ({ label: k, count: m.get(k) })); }
-function partOfDay() {
+function recordsByDay(day) { return !day || day === "all" ? STATE.records : STATE.records.filter((r) => clean(r[H.day]) === day); }
+function hourValues(recs) { return (recs || STATE.records).map((r) => clean(r[H.hour])).filter((v) => v !== ""); }
+function hourOfDay(recs) { const m = new Map(); hourValues(recs).forEach((v) => { const n = Number(v); if (Number.isFinite(n)) { const k = String(n).padStart(2, "0"); m.set(k, (m.get(k) || 0) + 1); } }); return [...m.keys()].sort().map((k) => ({ label: k, count: m.get(k) })); }
+function partOfDay(recs) {
   const b = { Overnight: 0, Morning: 0, Afternoon: 0, Evening: 0 };
-  cleaned(H.hour).forEach((v) => { const n = Number(v); if (!Number.isFinite(n)) return; if (n <= 5) b.Overnight++; else if (n <= 11) b.Morning++; else if (n <= 17) b.Afternoon++; else b.Evening++; });
+  hourValues(recs).forEach((v) => { const n = Number(v); if (!Number.isFinite(n)) return; if (n <= 5) b.Overnight++; else if (n <= 11) b.Morning++; else if (n <= 17) b.Afternoon++; else b.Evening++; });
   return Object.entries(b).map(([label, count]) => ({ label, count }));
 }
 /* completion vs cancellation share per category (inspired by ZR ComplCancel% tabs) */
@@ -238,14 +249,22 @@ function histogramSvg(values, capPct, colr) {
 
 function heatmap(metric) {
   const grid = dayHourAgg(metric), days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], max = Math.max(1, ...grid.flat());
-  const W = 560, padL = 42, padT = 24, right = 12, cw = (W - padL - right) / 24, ch = 28, Ht = padT + 7 * ch + 34;
+  const W = 560, padL = 42, padT = 24, right = 12, cw = (W - padL - right) / 24, ch = 28, Ht = padT + 7 * ch + 60;
   let cells = "", labels = "";
   for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) { const v = grid[d][h], x = padL + h * cw, y = padT + d * ch; cells += `<rect x="${x.toFixed(1)}" y="${y}" width="${(cw - 1.5).toFixed(1)}" height="${ch - 2}" rx="2" fill="${v > 0 ? heatColor(v / max) : "#0e1428"}"/>`; }
   days.forEach((d, i) => (labels += `<text x="${padL - 6}" y="${padT + i * ch + ch / 2 + 3}" fill="#9aa7c2" font-size="10" text-anchor="end">${d}</text>`));
   for (let h = 0; h < 24; h += 3) labels += `<text x="${(padL + h * cw + cw / 2).toFixed(1)}" y="${padT - 8}" fill="#9aa7c2" font-size="9" text-anchor="middle">${String(h).padStart(2, "0")}</text>`;
-  const ly = padT + 7 * ch + 16; let leg = "";
-  for (let i = 0; i < 40; i++) leg += `<rect x="${padL + i * 4}" y="${ly}" width="4" height="8" fill="${heatColor(i / 39)}"/>`;
-  leg += `<text x="${padL - 6}" y="${ly + 8}" fill="#9aa7c2" font-size="9" text-anchor="end">low</text><text x="${padL + 40 * 4 + 6}" y="${ly + 8}" fill="#9aa7c2" font-size="9">high (${metric === "turnaround" ? Math.round(max) + "m" : fmtNum(max)})</text>`;
+  // Larger gradient legend with numeric ticks (~every 5, scaled to a nice step).
+  const legX = padL, legW = 320, legH = 16, legY = padT + 7 * ch + 20;
+  let leg = "";
+  for (let i = 0; i < legW; i++) leg += `<rect x="${(legX + i).toFixed(1)}" y="${legY}" width="1.1" height="${legH}" fill="${heatColor(i / (legW - 1))}"/>`;
+  const step = (function (m) { const c = [5, 10, 15, 20, 25, 50, 100, 200, 500, 1000]; for (let k = 0; k < c.length; k++) if (m / c[k] <= 10) return c[k]; return Math.ceil(m / 10 / 1000) * 1000; })(max);
+  for (let val = 0; val <= max + 0.0001; val += step) {
+    const tx = legX + (val / max) * legW;
+    leg += `<line x1="${tx.toFixed(1)}" y1="${legY}" x2="${tx.toFixed(1)}" y2="${(legY + legH + 4).toFixed(1)}" stroke="#9aa7c2" stroke-width="1"/>`;
+    leg += `<text x="${tx.toFixed(1)}" y="${(legY + legH + 16).toFixed(1)}" fill="#9aa7c2" font-size="10" text-anchor="middle">${metric === "turnaround" ? Math.round(val) : fmtNum(val)}</text>`;
+  }
+  leg += `<text x="${(legX + legW + 10).toFixed(1)}" y="${(legY + legH).toFixed(1)}" fill="#9aa7c2" font-size="10">${metric === "turnaround" ? "min" : "dispatches"}</text>`;
   return svg(cells + labels + leg, W, Ht);
 }
 function scatterChart(yKey, yLabel) {
@@ -293,10 +312,14 @@ const WIDGETS = {
     render(s) { return catChart(counts(H.status), s.view, "dispatches"); },
   },
   hour: {
-    title: "Dispatches by Time of Day", defaults: { view: "column", group: "hour" },
-    controls: [{ group: "view", opts: [["column", "Bar"], ["pie", "Pie"]] }, { group: "group", opts: [["hour", "By hour"], ["part", "Part of day"]] }],
-    sub: (s) => (s.group === "part" ? "Overnight / Morning / Afternoon / Evening" : "24-hour demand curve"),
-    render(s) { const items = s.group === "part" ? partOfDay() : hourOfDay(); return s.view === "pie" ? pie(items, "dispatches", true) : barV(items, color(4), s.group === "hour"); },
+    title: "Dispatches by Time of Day", defaults: { view: "column", group: "hour", day: "all" },
+    controls: [
+      { group: "view", opts: [["column", "Bar"], ["pie", "Pie"]] },
+      { group: "group", opts: [["hour", "By hour"], ["part", "Part of day"]] },
+      { group: "day", type: "select", opts: [["all", "All days"]].concat(DOW.map((d) => [d, d])) },
+    ],
+    sub: (s) => (s.day && s.day !== "all" ? s.day + " \u00b7 " : "") + (s.group === "part" ? "Overnight / Morning / Afternoon / Evening" : "24-hour demand curve"),
+    render(s) { const recs = recordsByDay(s.day); const items = s.group === "part" ? partOfDay(recs) : hourOfDay(recs); return s.view === "pie" ? pie(items, "dispatches", true) : barV(items, color(4), s.group === "hour"); },
   },
   dow: {
     title: "Dispatches by Day", defaults: { view: "column", group: "day" },
@@ -376,7 +399,7 @@ const WIDGETS = {
     title: "Turnaround Trend", defaults: { metric: "median", group: "month" },
     controls: [{ group: "metric", opts: [["median", "Median"], ["mean", "Mean"]] }, { group: "group", opts: [["month", "Monthly"], ["week", "Weekly"]] }],
     sub: (s) => `${s.metric === "mean" ? "Mean" : "Median"} turnaround (min), ${s.group === "week" ? "weekly" : "monthly"}`,
-    render(s) { const agg = s.metric === "mean" ? mean : median; const pts = series(H.date, s.group, (rs) => { const v = rs.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0); return v.length ? agg(v) : 0; }); return lineChart(pts, "val", color(1), (v) => `${Math.round(v)}m`); },
+    render(s) { const agg = s.metric === "mean" ? mean : median; const pts = series(H.date, s.group, (rs) => { const v = rs.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0); return v.length ? agg(v) : 0; }).filter((p) => p.val > 0); return lineChart(pts, "val", color(1), (v) => `${Math.round(v)}m`); },
   },
   turnLoc: {
     title: "Turnaround by Location", defaults: { metric: "median" },
@@ -395,7 +418,12 @@ const WIDGETS = {
 function widgetCard(id, cls) {
   const w = WIDGETS[id];
   const st = STATE.widgets[id] || (STATE.widgets[id] = { ...w.defaults });
-  const controls = w.controls.map((cg) => `<div class="btn-group" data-widget="${id}" data-group="${cg.group}">${cg.opts.map(([opt, label]) => `<button class="toggle ${st[cg.group] === opt ? "active" : ""}" data-opt="${opt}">${esc(label)}</button>`).join("")}</div>`).join("");
+  const controls = w.controls.map((cg) => {
+    if (cg.type === "select") {
+      return `<select class="geo-select" data-widget="${id}" data-wgroup="${cg.group}">${cg.opts.map(([v, label]) => `<option value="${esc(v)}"${st[cg.group] === v ? " selected" : ""}>${esc(label)}</option>`).join("")}</select>`;
+    }
+    return `<div class="btn-group" data-widget="${id}" data-group="${cg.group}">${cg.opts.map(([opt, label]) => `<button class="toggle ${st[cg.group] === opt ? "active" : ""}" data-opt="${opt}">${esc(label)}</button>`).join("")}</div>`;
+  }).join("");
   const sub = typeof w.sub === "function" ? w.sub(st) : w.sub;
   return `<div class="card ${cls || ""}"><div class="card-head"><div><h3 class="card-title">${esc(w.title)}</h3>${sub ? `<div class="card-sub">${esc(sub)}</div>` : ""}</div><div class="controls">${controls}</div></div><div class="widget-body" data-widget-body="${id}">${w.render(st)}</div></div>`;
 }
@@ -411,6 +439,17 @@ function onToggle(e) {
   if (body) body.innerHTML = w.render(STATE.widgets[id]);
   if (typeof w.sub === "function") { const subEl = card.querySelector(".card-sub"); if (subEl) subEl.textContent = w.sub(STATE.widgets[id]); }
 }
+function onWidgetSelect(e) {
+  const sel = e.target;
+  if (sel.tagName !== "SELECT" || !sel.dataset.widget || !sel.dataset.wgroup) return;
+  const id = sel.dataset.widget, group = sel.dataset.wgroup, w = WIDGETS[id];
+  if (!w) return;
+  STATE.widgets[id][group] = sel.value;
+  const card = sel.closest(".card");
+  const body = card.querySelector(`[data-widget-body="${id}"]`);
+  if (body) body.innerHTML = w.render(STATE.widgets[id]);
+  if (typeof w.sub === "function") { const subEl = card.querySelector(".card-sub"); if (subEl) subEl.textContent = w.sub(STATE.widgets[id]); }
+}
 
 /* ---------------- KPIs + static cards ---------------- */
 function kpi(label, value, hint, i) { return `<div class="card kpi"><div class="kpi-accent" style="background:${color(i)}"></div><div class="kpi-label">${esc(label)}</div><div class="kpi-value">${esc(value)}</div>${hint ? `<div class="kpi-hint">${esc(hint)}</div>` : ""}</div>`; }
@@ -419,6 +458,7 @@ function buildKpis() {
   const completed = (counts(H.status).find((s) => /complete/i.test(s.label)) || { count: 0 }).count;
   const l0 = cleaned(H.l0), fp = l0.filter((v) => /false positive/i.test(v)).length, tp = l0.filter((v) => /true positive/i.test(v)).length;
   const turn = posNums(H.mTurnaround), deadhead = nums(H.deadhead).filter((n) => n >= 0);
+  const rr = riderRecoveryRate(STATE.records);
   const cards = [
     ["Total Dispatches", fmtNum(total), "Fleet-response events"],
     ["Completion Rate", fmtPct((completed / total) * 100), `${fmtNum(completed)} completed · ${fmtNum(total - completed)} cancelled`],
@@ -427,6 +467,7 @@ function buildKpis() {
     ["Median On-Scene", fmtMin(median(posNums(H.mOnScene))), "Time working the scene"],
     ["L0 False-Positive Rate", fmtPct(tp + fp ? (fp / (tp + fp)) * 100 : 0), `${fmtNum(fp)} FP of ${fmtNum(tp + fp)} L0s`],
     ["Riders Onboard", fmtPct(pctTrue(H.ridersIn)), "Dispatches with riders in the VH6"],
+    ["Rider Recovery Rate", fmtPct(rr.rate), `${fmtNum(rr.recovered)} of ${fmtNum(rr.onboard)} rider-onboard dispatches recovered`],
     ["Avg Deadhead", fmtPct(mean(deadhead) * 100), "Non-productive travel share"],
   ];
   return `<div class="grid kpi-grid">${cards.map((c, i) => kpi(c[0], c[1], c[2], i)).join("")}</div>`;
@@ -440,7 +481,7 @@ function renderPerformance() {
   const hist = histogramSvg(posNums(H.mTurnaround), 95, color(2));
   return `<div class="grid chart-grid">${widgetCard("lifecycle", "span-2")}${widgetCard("turnTrend")}${staticCard("Turnaround Distribution", `Minutes, capped at 95th pct (${Math.round(hist.cap)} min)`, hist.svg)}${widgetCard("scatter")}${widgetCard("turnLoc")}${widgetCard("turnType")}</div>`;
 }
-function renderPatterns() { return `<div class="grid chart-grid">${widgetCard("heat", "span-2")}${widgetCard("hour")}${widgetCard("dow")}${widgetCard("location")}${widgetCard("milestone")}</div>`; }
+function renderPatterns() { return `<div class="grid chart-grid">${widgetCard("heat", "span-2")}${widgetCard("hour", "span-2")}${widgetCard("dow")}${widgetCard("location")}${widgetCard("milestone")}</div>`; }
 function renderEvents() { return `<div class="grid chart-grid">${widgetCard("reason", "span-2")}${widgetCard("l0")}${widgetCard("resolution")}${widgetCard("crew")}${widgetCard("supervisor")}</div>`; }
 
 const EXPLORER_COLS = [H.date, H.vh6, H.status, H.type, H.reason, H.location, H.assignee, H.action, H.mDispatchArrive, H.mTurnaround, H.ridersIn];
@@ -496,10 +537,12 @@ function metricsFor(recs) {
   const fp = l0.filter((v) => /false positive/i.test(v)).length, tp = l0.filter((v) => /true positive/i.test(v)).length;
   const dead = recs.map((r) => toNum(r[H.deadhead])).filter((n) => n !== null && n >= 0);
   const riders = recs.map((r) => clean(r[H.ridersIn]).toUpperCase()).filter((v) => v === "TRUE" || v === "FALSE");
+  const rr = riderRecoveryRate(recs);
   return {
     total, completionRate: total ? (completed / total) * 100 : 0, medianTurn: median(turn), medianResp: median(resp),
     medianOns: median(ons), l0fp: tp + fp ? (fp / (tp + fp)) * 100 : 0, deadhead: mean(dead) * 100,
     riders: riders.length ? (riders.filter((v) => v === "TRUE").length / riders.length) * 100 : 0,
+    riderRec: rr.rate,
   };
 }
 function seriesOf(recs, mode, valueFn) {
@@ -517,21 +560,30 @@ function hourCountsOf(recs) { const m = new Map(); recs.forEach((r) => { const n
 function partCountsOf(recs) { const b = { Overnight: 0, Morning: 0, Afternoon: 0, Evening: 0 }; recs.forEach((r) => { const n = Number(clean(r[H.hour])); if (!Number.isFinite(n)) return; if (n <= 5) b.Overnight++; else if (n <= 11) b.Morning++; else if (n <= 17) b.Afternoon++; else b.Evening++; }); return b; }
 function catCountsOf(recs, key) { const m = new Map(); recs.forEach((r) => { const v = clean(r[key]); if (v) m.set(v, (m.get(v) || 0) + 1); }); return m; }
 
-function dualLine(sa, sb, nameA, nameB, fmt) {
+function dualLine(sa, sb, nameA, nameB, fmt, fillZero) {
+  if (fillZero === undefined) fillZero = true; // volume: 0 is real. metrics: pass false to gap missing months
   const mapA = new Map(sa.map((p) => [p.period, p.val])), mapB = new Map(sb.map((p) => [p.period, p.val]));
   const labels = new Map(); sa.concat(sb).forEach((p) => labels.set(p.period, p.label));
   const periods = [...new Set([...mapA.keys(), ...mapB.keys()])].sort((a, b) => a.localeCompare(b));
   if (!periods.length) return `<div class="empty-hint">No data for this selection.</div>`;
+  const idx = new Map(periods.map((p, i) => [p, i]));
   const W = 560, Ht = 300, pad = { l: 48, r: 16, t: 16, b: 34 }, iw = W - pad.l - pad.r, ih = Ht - pad.t - pad.b;
-  const max = Math.max(1, ...periods.map((p) => Math.max(mapA.get(p) || 0, mapB.get(p) || 0)));
+  const allVals = fillZero ? periods.map((p) => Math.max(mapA.get(p) || 0, mapB.get(p) || 0)) : [...mapA.values(), ...mapB.values()];
+  const max = Math.max(1, ...allVals);
   const x = (i) => pad.l + (periods.length === 1 ? iw / 2 : (i / (periods.length - 1)) * iw), y = (v) => pad.t + ih - (v / max) * ih;
   let g = "";
   for (let t = 0; t <= 4; t++) { const gy = pad.t + (ih / 4) * t; g += `<line x1="${pad.l}" y1="${gy}" x2="${W - pad.r}" y2="${gy}" stroke="#26314f" stroke-dasharray="3 3"/><text x="${pad.l - 8}" y="${gy + 4}" fill="#9aa7c2" font-size="10" text-anchor="end">${fmt ? fmt(max - (max / 4) * t) : fmtNum(Math.round(max - (max / 4) * t))}</text>`; }
   let lbl = "", last = null, lastX = -1e9;
   periods.forEach((p, i) => { const cx = x(i), L = labels.get(p) || p; if (L !== last && cx - lastX >= 40) { lbl += `<text x="${cx.toFixed(1)}" y="${Ht - 10}" fill="#9aa7c2" font-size="10" text-anchor="middle">${esc(L)}</text>`; last = L; lastX = cx; } });
-  const lineFor = (map, col) => { const pts = periods.map((p, i) => `${x(i).toFixed(1)},${y(map.get(p) || 0).toFixed(1)}`).join(" "); const dots = periods.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(map.get(p) || 0).toFixed(1)}" r="2.5" fill="${col}"/>`).join(""); return `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5"/>${dots}`; };
+  const lineFor = (series, map, col) => {
+    const pts = fillZero ? periods.map((p) => [x(idx.get(p)), y(map.get(p) || 0)]) : series.map((p) => [x(idx.get(p.period)), y(p.val)]);
+    if (!pts.length) return "";
+    const poly = pts.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(" ");
+    const dots = pts.map((q) => `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="2.5" fill="${col}"/>`).join("");
+    return `<polyline points="${poly}" fill="none" stroke="${col}" stroke-width="2.5"/>${dots}`;
+  };
   const legend = `<div class="legend"><div class="legend-item"><span class="legend-swatch" style="background:${CMP_A}"></span>${esc(nameA)}</div><div class="legend-item"><span class="legend-swatch" style="background:${CMP_B}"></span>${esc(nameB)}</div></div>`;
-  return svg(g + lineFor(mapA, CMP_A) + lineFor(mapB, CMP_B) + lbl, W, Ht) + legend;
+  return svg(g + lineFor(sa, mapA, CMP_A) + lineFor(sb, mapB, CMP_B) + lbl, W, Ht) + legend;
 }
 function groupedBarV(cats, aVals, bVals, nameA, nameB, rotate) {
   if (!cats.length) return `<div class="empty-hint">No data for this selection.</div>`;
@@ -554,7 +606,7 @@ function groupedBarV(cats, aVals, bVals, nameA, nameB, rotate) {
 function cmpCard(title, sub, controls, body) { return `<div class="card"><div class="card-head"><div><h3 class="card-title">${esc(title)}</h3>${sub ? `<div class="card-sub">${esc(sub)}</div>` : ""}</div>${controls ? `<div class="controls">${controls}</div>` : ""}</div>${body}</div>`; }
 function cmpKpisCard(a, b, A, B) {
   const mA = metricsFor(a), mB = metricsFor(b);
-  const rows = [["Total Dispatches", fmtNum(mA.total), fmtNum(mB.total)], ["Completion Rate", fmtPct(mA.completionRate), fmtPct(mB.completionRate)], ["Median Turnaround", fmtMin(mA.medianTurn), fmtMin(mB.medianTurn)], ["Median Response", fmtMin(mA.medianResp), fmtMin(mB.medianResp)], ["Median On-Scene", fmtMin(mA.medianOns), fmtMin(mB.medianOns)], ["L0 False-Positive Rate", fmtPct(mA.l0fp), fmtPct(mB.l0fp)], ["Avg Deadhead", fmtPct(mA.deadhead), fmtPct(mB.deadhead)], ["Riders Onboard", fmtPct(mA.riders), fmtPct(mB.riders)]];
+  const rows = [["Total Dispatches", fmtNum(mA.total), fmtNum(mB.total)], ["Completion Rate", fmtPct(mA.completionRate), fmtPct(mB.completionRate)], ["Median Turnaround", fmtMin(mA.medianTurn), fmtMin(mB.medianTurn)], ["Median Response", fmtMin(mA.medianResp), fmtMin(mB.medianResp)], ["Median On-Scene", fmtMin(mA.medianOns), fmtMin(mB.medianOns)], ["L0 False-Positive Rate", fmtPct(mA.l0fp), fmtPct(mB.l0fp)], ["Avg Deadhead", fmtPct(mA.deadhead), fmtPct(mB.deadhead)], ["Riders Onboard", fmtPct(mA.riders), fmtPct(mB.riders)], ["Rider Recovery Rate", fmtPct(mA.riderRec), fmtPct(mB.riderRec)]];
   const body = `<div class="table-wrap"><table class="data"><thead><tr><th>Metric</th><th style="color:${CMP_A}">${esc(A)}</th><th style="color:${CMP_B}">${esc(B)}</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</tbody></table></div>`;
   return `<div class="card span-2"><h3 class="card-title">KPI Comparison</h3><div class="card-sub">${esc(A)} vs ${esc(B)} — within the current time range &amp; location filters</div>${body}</div>`;
 }
@@ -584,7 +636,8 @@ function renderComparison() {
 
   const volA = seriesOf(a, STATE.cmp.time), volB = seriesOf(b, STATE.cmp.time);
   const turnFn = (rows) => { const v = rows.map((r) => toNum(r[H.mTurnaround])).filter((n) => n && n > 0); return v.length ? median(v) : 0; };
-  const tA = seriesOf(a, STATE.cmp.time, turnFn), tB = seriesOf(b, STATE.cmp.time, turnFn);
+  // Only plot months that actually have a measured turnaround (>0); others become gaps, not zeros.
+  const tA = seriesOf(a, STATE.cmp.time, turnFn).filter((p) => p.val > 0), tB = seriesOf(b, STATE.cmp.time, turnFn).filter((p) => p.val > 0);
 
   let todCats, todA, todB;
   if (STATE.cmp.tod === "part") { todCats = ["Overnight", "Morning", "Afternoon", "Evening"]; const pa = partCountsOf(a), pb = partCountsOf(b); todA = todCats.map((c) => pa[c]); todB = todCats.map((c) => pb[c]); }
@@ -600,7 +653,7 @@ function renderComparison() {
 
   const charts =
     cmpCard("Dispatches Over Time", "Volume by period", timeToggle, dualLine(volA, volB, nameA, nameB)) +
-    cmpCard("Median Turnaround Trend", "Turnaround minutes by period", timeToggle, dualLine(tA, tB, nameA, nameB, (v) => `${Math.round(v)}m`)) +
+    cmpCard("Median Turnaround Trend", "Turnaround minutes by period (months with no measured turnaround are skipped)", timeToggle, dualLine(tA, tB, nameA, nameB, (v) => `${Math.round(v)}m`, false)) +
     cmpCard("Dispatches by Time of Day", STATE.cmp.tod === "part" ? "Part of day" : "24-hour demand", todToggle, groupedBarV(todCats, todA, todB, nameA, nameB, STATE.cmp.tod === "hour")) +
     cmpCard("Dispatch Type", "Top types", null, groupedBarV(typeCats, typeA, typeB, nameA, nameB, true)) +
     cmpCard("Reason for Event", "Top reasons", null, groupedBarV(reasonCats, reasonA, reasonB, nameA, nameB, true));
@@ -693,8 +746,8 @@ function renderNav() {
   document.getElementById("nav").innerHTML = PAGES.map((p) => `<div class="nav-link ${p.id === STATE.page ? "active" : ""}" data-page="${p.id}"><span class="nav-icon">${p.icon}</span>${p.label}</div>`).join("");
   document.querySelectorAll(".nav-link").forEach((el) => el.addEventListener("click", () => { STATE.page = el.dataset.page; renderNav(); renderContent(); }));
 }
-function renderContent() { if (!STATE.loaded) { showUpload(); return; } document.getElementById("content").innerHTML = (PAGES.find((p) => p.id === STATE.page) || PAGES[0]).fn(); }
-function renderFileControls() { const el = document.getElementById("fileControls"); if (el) el.innerHTML = STATE.loaded ? `<button id="newFileBtn" title="Load a different CSV">↺ New CSV</button>` : ""; }
+function renderContent() { if (!STATE.loaded) { if (!window.__SUPPRESS_UPLOAD__) showUpload(); return; } document.getElementById("content").innerHTML = (PAGES.find((p) => p.id === STATE.page) || PAGES[0]).fn(); }
+function renderFileControls() { const el = document.getElementById("fileControls"); if (!el) return; el.innerHTML = (STATE.loaded && !window.__SUPPRESS_UPLOAD__) ? `<button id="newFileBtn" title="Load a different CSV">↺ New CSV</button>` : ""; }
 
 /* ---------------- upload flow ---------------- */
 function showUpload(err) {
@@ -752,6 +805,7 @@ async function init() {
   document.addEventListener("change", onRangeInput);
   document.addEventListener("change", onGeo);
   document.addEventListener("change", onCmp);
+  document.addEventListener("change", onWidgetSelect);
   document.getElementById("fileInput").addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (f) readFile(f); e.target.value = ""; });
   document.addEventListener("click", (e) => { if (e.target.id === "newFileBtn") showUpload(); });
 
@@ -763,6 +817,9 @@ async function init() {
   if (csv && !csv.includes("://") && !csv.startsWith("//") && !csv.startsWith("/")) {
     try { const res = await fetch(csv, { cache: "no-store" }); if (res.ok) { boot(await res.text()); applyUrlState(params); return; } } catch (e) { /* fall through to upload */ }
   }
+  // Hosts that provide data externally (e.g. Apps Script) set __SUPPRESS_UPLOAD__
+  // so the upload screen never renders; they call boot() with the data instead.
+  if (window.__SUPPRESS_UPLOAD__) { window.__READY__ = true; return; }
   showUpload();
   window.__READY__ = true;
 }

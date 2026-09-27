@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Response Dashboard</title>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">FR</div>
+        <div>
+          <div class="brand-name">Fleet Response</div>
+          <div class="brand-sub">Recovery operations analytics</div>
+        </div>
+      </div>
+      <nav id="nav"></nav>
+      <div class="sidebar-footer">
+        <span class="badge-live"><span class="dot"></span> Live Google Sheet</span>
+        <div style="margin-top: 10px">Data is read live from the sheet each time this opens.</div>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Fleet Response Dashboard</h1>
+          <div class="page-subtitle" id="subtitle">Loading dashboard... [build v6]</div>
+        </div>
+        <div class="header-controls">
+          <div class="controls" id="rangeControls"></div>
+          <div id="geoControls"></div>
+          <div id="fileControls"></div>
+        </div>
+      </div>
+      <div id="content"></div>
+    </main>
+  </div>
+  <input type="file" id="fileInput" accept=".csv,text/csv" style="display: none" />
+
+  <!--
+    NOTE: This file intentionally contains NO template literals (backticks).
+    The dashboard code (app.js) and styles (styles.css) are loaded at RUNTIME
+    as data strings and injected via element.textContent, so their backticks
+    never pass through Apps Script's document.write (which is what caused the
+    "Invalid or unexpected token" error).
+  -->
+  <script>
+    // Tell the dashboard code not to render its "upload a CSV" screen — this host
+    // supplies data from the Google Sheet and calls boot() directly.
+    window.__SUPPRESS_UPLOAD__ = true;
+
+    function __cell(c) {
+      if (c == null) return "";
+      if (Object.prototype.toString.call(c) === "[object Date]")
+        return (c.getMonth() + 1) + "/" + c.getDate() + "/" + c.getFullYear();
+      return String(c);
+    }
+    function __toCSV(rows) {
+      var out = [];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i], line = [];
+        for (var j = 0; j < r.length; j++) {
+          var s = __cell(r[j]);
+          line.push(/[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s);
+        }
+        out.push(line.join(","));
+      }
+      return out.join("\n");
+    }
+    function __err(msg) {
+      var s = document.getElementById("subtitle");
+      if (s) { s.textContent = "Error: " + msg; s.style.color = "#ff6b8b"; }
+    }
+    function __b64ToStr(b64) {
+      var bin = atob(String(b64).replace(/\s+/g, ""));
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder("utf-8").decode(bytes); // UTF-8 safe (emoji etc.)
+    }
+    function __injectCss(b64) {
+      var st = document.createElement("style");
+      st.textContent = __b64ToStr(b64);
+      document.head.appendChild(st);
+    }
+    function __injectApp(b64) {
+      var sc = document.createElement("script");
+      sc.textContent = __b64ToStr(b64);   // executed as JS; backticks/emoji safe
+      document.body.appendChild(sc);
+    }
+    // Wait until the injected app.js has defined boot() before calling it
+    // (in Apps Script's sandbox an injected <script> may run a tick later).
+    function __whenBootReady(cb) {
+      if (typeof boot === "function") return cb();
+      var tries = 0;
+      var t = setInterval(function () {
+        if (typeof boot === "function") { clearInterval(t); cb(); }
+        else if (tries++ > 200) { clearInterval(t); __err("dashboard code did not initialize."); }
+      }, 20);
+    }
+    function __loadData() {
+      google.script.run
+        .withSuccessHandler(function (values) {
+          if (values && values.error) { __err(values.error); return; }
+          if (!values || values.length < 2) { __err("Sheet is empty or missing headers."); return; }
+          __whenBootReady(function () { boot(__toCSV(values)); });
+        })
+        .withFailureHandler(function (e) { __err(e && e.message ? e.message : e); })
+        .getDashboardData();
+    }
+    window.addEventListener("load", function () {
+      google.script.run
+        .withSuccessHandler(function (cssB64) {
+          __injectCss(cssB64);
+          google.script.run
+            .withSuccessHandler(function (appB64) {
+              __injectApp(appB64);   // defines boot(); upload screen suppressed via __SUPPRESS_UPLOAD__
+              __loadData();          // waits for boot() to exist, then renders the dashboard
+            })
+            .withFailureHandler(function (e) { __err("app load: " + (e && e.message ? e.message : e)); })
+            .getAppJs();
+        })
+        .withFailureHandler(function (e) { __err("css load: " + (e && e.message ? e.message : e)); })
+        .getCss();
+    });
+  </script>
+</body>
+</html>
